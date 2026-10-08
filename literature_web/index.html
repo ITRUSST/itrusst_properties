@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TUS Tissue Properties</title>
+  <meta name="description" content="Literature values for acoustic and thermal properties of skull, brain and water for transcranial ultrasound simulation, compiled by the ITRUSST Acoustic Properties Working Group.">
+  <script>
+    // apply saved theme before first paint
+    try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="https://www.itrusst.com/" target="_blank" rel="noopener" title="ITRUSST">
+        <span class="logo-plate"><img id="org-logo" src="assets/img/itrusst.png" alt="ITRUSST" height="40"></span>
+      </a>
+      <div class="title-block">
+        <h1>TUS Tissue Properties</h1>
+        <p class="byline">Compiled by the <a href="https://www.itrusst.com/working-group/properties" target="_blank" rel="noopener">ITRUSST Acoustic Properties Working Group</a>. Literature values for skull, brain and water used in transcranial ultrasound simulation.</p>
+      </div>
+      <nav class="links" aria-label="Project">
+        <a href="https://www.itrusst.com/" target="_blank" rel="noopener">ITRUSST</a>
+        <a id="repo-link" href="#">Repository</a>
+        <a id="contrib-link" href="CONTRIBUTING.md">Contribute</a>
+        <a href="data/measurements.csv">Data (CSV)</a>
+        <button type="button" id="theme" class="theme-btn" aria-label="Colour theme"></button>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap layout">
+    <aside class="filters" aria-label="Filters">
+      <div class="filters-head">
+        <h2>Filters</h2>
+        <button type="button" id="reset" class="link-btn">Reset</button>
+      </div>
+
+      <section class="fgroup">
+        <h3>Tissue</h3>
+        <div id="f-tissue" class="seg" role="group" aria-label="Tissue"></div>
+      </section>
+
+      <section class="fgroup">
+        <h3>Property</h3>
+        <div id="f-property" class="chips"></div>
+      </section>
+
+      <section class="fgroup">
+        <h3>Status</h3>
+        <div id="f-status" class="checks"></div>
+      </section>
+
+      <section class="fgroup">
+        <h3>Species</h3>
+        <div id="f-species" class="checks"></div>
+      </section>
+
+      <section class="fgroup">
+        <h3>Division</h3>
+        <div id="f-division" class="checks"></div>
+      </section>
+
+      <section class="fgroup">
+        <h3>Preparation</h3>
+        <div id="f-preparation" class="checks"></div>
+      </section>
+
+      <section class="fgroup">
+        <div class="fgroup-head">
+          <h3>References</h3>
+          <span class="mini-actions">
+            <button type="button" class="link-btn" data-refs="all">all</button>
+            <button type="button" class="link-btn" data-refs="none">none</button>
+          </span>
+        </div>
+        <input id="ref-search" type="search" placeholder="Filter references…" aria-label="Filter reference list">
+        <label class="toggle"><input type="checkbox" id="ref-deep"> also match values cited indirectly (via Duck, IT'IS, …)</label>
+        <div id="f-ref" class="checks refs"></div>
+      </section>
+    </aside>
+
+    <main>
+      <section class="card overview" aria-labelledby="ov-title">
+        <div class="card-head">
+          <h2 id="ov-title">Overview <span class="unit">all tissues</span></h2>
+          <span class="stats">Ranges of non-excluded values under the current status, species, division, preparation and reference filters. Click a cell to open that table.</span>
+        </div>
+        <div class="ov-grid">
+          <figure class="ov-fig">
+            <div id="ov-chart"></div>
+            <figcaption class="legend">
+              <span><i class="sw skull"></i>Skull</span>
+              <span><i class="sw brain"></i>Brain</span>
+              <span><i class="sw med"></i>Median</span>
+              <span class="legend-note">Bars span the range of non-excluded values; each axis has its own linear scale. Water is listed in the table.</span>
+            </figcaption>
+          </figure>
+          <div class="tbl-wrap"><table id="ov-table" class="ov-table"></table></div>
+        </div>
+      </section>
+
+      <div class="toolbar">
+        <input id="q" type="search" placeholder="Search labels, notes, reported values…" aria-label="Free-text search">
+        <span id="count" class="count"></span>
+        <button type="button" id="dl" class="btn">Download selection (CSV)</button>
+        <button type="button" id="share" class="btn ghost">Copy link</button>
+      </div>
+      <div id="results"></div>
+      <section class="refs-cited">
+        <h2>References in view</h2>
+        <ol id="cited"></ol>
+      </section>
+    </main>
+  </div>
+
+  <footer class="wrap site-footer">
+    <p>Compiled and maintained by the <a href="https://www.itrusst.com/working-group/properties" target="_blank" rel="noopener">ITRUSST Acoustic Properties Working Group</a> (<a href="https://www.itrusst.com/" target="_blank" rel="noopener">itrusst.com</a>). Seeded from Supplementary Table S1 of <em>Impact of acoustic property uncertainty on transcranial ultrasound simulation</em>.</p>
+    <p>Attenuation is compared at 0.5 MHz using each row's power-law exponent b: α(0.5 MHz) = α(1 MHz) · 0.5<sup>b</sup>. Corrections and additions via issues or pull requests.</p>
+    <p>Data: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Code: MIT.</p>
+  </footer>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
