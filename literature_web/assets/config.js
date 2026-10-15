@@ -5,4 +5,13 @@ window.SITE_CONFIG = {
   dir: "literature_web/",
   branch: "main",
   logo: "assets/img/itrusst.png",
+  // Inline comment threads per value (giscus, stored in GitHub Discussions).
+  // Fill repoId / categoryId from https://giscus.app after making the repo public,
+  // enabling Discussions and installing the giscus app. Leave empty to hide threads.
+  giscus: {
+    repo: "jkosciessa/itrusst_acousticproperties",
+    repoId: "",
+    category: "Value comments",
+    categoryId: "",
+  },
 };

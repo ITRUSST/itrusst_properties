@@ -18,14 +18,15 @@
         <span class="logo-plate"><img id="org-logo" src="assets/img/itrusst.png" alt="ITRUSST" height="40"></span>
       </a>
       <div class="title-block">
-        <h1>TUS Tissue Properties</h1>
-        <p class="byline">Compiled by the <a href="https://www.itrusst.com/working-group/properties" target="_blank" rel="noopener">ITRUSST Acoustic Properties Working Group</a>. Literature values for skull, brain and water used in transcranial ultrasound simulation.</p>
+        <h1>TUS Tissue Properties <a class="vbadge" href="CHANGELOG.md" title="Database version and changelog">Database <span data-version>v…</span> · <span data-version-date></span></a></h1>
+        <p class="byline">Compiled by the <a href="https://www.itrusst.com/working-group/properties" target="_blank" rel="noopener">ITRUSST Acoustic Properties Working Group</a>.<br>Literature values for skull, brain and water used in transcranial ultrasound simulation.</p>
       </div>
       <nav class="links" aria-label="Project">
         <a href="https://www.itrusst.com/" target="_blank" rel="noopener">ITRUSST</a>
         <a id="repo-link" href="#">Repository</a>
         <a id="contrib-link" href="CONTRIBUTING.md">Contribute</a>
-        <a href="data/measurements.csv">Data (CSV)</a>
+        <a id="release-link" href="#" title="Versioned bundle and simulation settings (GitHub Releases)">Download Database</a>
+        <button type="button" id="dl-all" class="theme-btn" title="All values of the database version in view as CSV, with metadata (zip); ignores filters">Download Table</button>
         <button type="button" id="theme" class="theme-btn" aria-label="Colour theme"></button>
       </nav>
     </div>
@@ -35,8 +36,12 @@
     <aside class="filters" aria-label="Filters">
       <div class="filters-head">
         <h2>Filters</h2>
-        <button type="button" id="reset" class="link-btn">Reset</button>
+        <span class="mini-actions">
+          <button type="button" id="reset" class="link-btn">Reset</button>
+          <button type="button" id="filters-toggle" class="link-btn filters-toggle" aria-expanded="false" aria-controls="filters-body">Show filters</button>
+        </span>
       </div>
+      <div id="filters-body">
 
       <section class="fgroup">
         <h3>Tissue</h3>
@@ -51,6 +56,11 @@
       <section class="fgroup">
         <h3>Status</h3>
         <div id="f-status" class="checks"></div>
+      </section>
+
+      <section class="fgroup">
+        <h3>Bound</h3>
+        <div id="f-bound" class="checks"></div>
       </section>
 
       <section class="fgroup">
@@ -80,22 +90,29 @@
         <label class="toggle"><input type="checkbox" id="ref-deep"> also match values cited indirectly (via Duck, IT'IS, …)</label>
         <div id="f-ref" class="checks refs"></div>
       </section>
+      </div>
     </aside>
 
     <main>
+      <div id="vbanner" class="vbanner" role="status" hidden></div>
       <section class="card overview" aria-labelledby="ov-title">
         <div class="card-head">
           <h2 id="ov-title">Overview <span class="unit">all tissues</span></h2>
+          <label class="bv-pick">Database version <select id="bv" aria-label="Database version"></select> <span id="bv-note" class="bv-note"></span></label>
           <span class="stats">Ranges of non-excluded values under the current status, species, division, preparation and reference filters. Click a cell to open that table.</span>
         </div>
         <div class="ov-grid">
           <figure class="ov-fig">
+            <div class="ov-controls">
+              <label>Compare by <select id="cmp" aria-label="Group values by"></select></label>
+              <label class="toggle-inline"><input type="checkbox" id="cmp-values" checked> literature values</label>
+              <label class="toggle-inline"><input type="checkbox" id="cmp-water"> include water</label>
+              <label class="toggle-inline" title="Values used as the reference setting in the simulations (Table 1); not a literature value"><input type="checkbox" id="cmp-bench"> reference benchmark</label>
+              <span class="ov-export">Save plot: <button type="button" id="dl-svg" class="link-btn">SVG</button> <button type="button" id="dl-png" class="link-btn">PNG</button></span>
+            </div>
             <div id="ov-chart"></div>
             <figcaption class="legend">
-              <span><i class="sw skull"></i>Skull</span>
-              <span><i class="sw brain"></i>Brain</span>
-              <span><i class="sw med"></i>Median</span>
-              <span class="legend-note">Bars span the range of non-excluded values; each axis has its own linear scale. Water is listed in the table.</span>
+              <span class="legend-note">Bars span the range of non-excluded values (Status view: all values that pass the filters; excluded values are unticked by default under Status); dots are individual literature values (click one to open it). Black ticks mark the LOW/HIGH bounds; tick “reference benchmark” to also show the simulation reference values of Table 1 (green). Medians treat a value reported as a range as its midpoint. Each property has its own linear scale (per row when split by tissue). Click a legend entry to hide or show a group (keyboard: Tab, then Enter).</span>
             </figcaption>
           </figure>
           <div class="tbl-wrap"><table id="ov-table" class="ov-table"></table></div>
@@ -105,8 +122,12 @@
       <div class="toolbar">
         <input id="q" type="search" placeholder="Search labels, notes, reported values…" aria-label="Free-text search">
         <span id="count" class="count"></span>
-        <button type="button" id="dl" class="btn">Download selection (CSV)</button>
+        <button type="button" id="dl" class="btn" title="CSV of the values in view, with metadata (zip)">Download selection</button>
         <button type="button" id="share" class="btn ghost">Copy link</button>
+        <details class="colpick">
+          <summary class="btn ghost">Columns</summary>
+          <div class="colpick-menu" id="colpick-list" role="group" aria-label="Table columns"></div>
+        </details>
       </div>
       <div id="results"></div>
       <section class="refs-cited">
@@ -117,8 +138,9 @@
   </div>
 
   <footer class="wrap site-footer">
-    <p>Compiled and maintained by the <a href="https://www.itrusst.com/working-group/properties" target="_blank" rel="noopener">ITRUSST Acoustic Properties Working Group</a> (<a href="https://www.itrusst.com/" target="_blank" rel="noopener">itrusst.com</a>). Seeded from Supplementary Table S1 of <em>Impact of acoustic property uncertainty on transcranial ultrasound simulation</em>.</p>
-    <p>Attenuation is compared at 0.5 MHz using each row's power-law exponent b: α(0.5 MHz) = α(1 MHz) · 0.5<sup>b</sup>. Corrections and additions via issues or pull requests.</p>
+    <p>Compiled and maintained by the <a href="https://www.itrusst.com/working-group/properties" target="_blank" rel="noopener">ITRUSST Acoustic Properties Working Group</a> (<a href="https://www.itrusst.com/" target="_blank" rel="noopener">itrusst.com</a>).</p>
+    <p>If you find this resource useful, please cite:<br><span class="cite">Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Yengul, S., Verhagen, L., Butts Pauly, K., &amp; Pichardo, S. (in preparation). <em>Impact of acoustic property uncertainty on transcranial ultrasound simulation</em>. Database version <span data-version>v…</span> (<span data-version-date></span>).</span></p>
+    <p>Attenuation is compared at 0.5 MHz using each row's power-law exponent b: α(0.5 MHz) = α(1 MHz) · 0.5<sup>b</sup>. Ranges, medians and n use non-excluded values; a value reported as a range enters the median at its midpoint. Corrections and additions via issues or pull requests.</p>
     <p>Data: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Code: MIT.</p>
   </footer>
 

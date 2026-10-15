@@ -14,11 +14,20 @@
     absorption_coefficient: { name: "Absorption coefficient", unit: "dB/cm @ 0.5 MHz" },
   };
   const TISSUES = ["skull", "brain", "water"];
-  const FACETS = ["status", "species", "division", "preparation"];
+  const FACETS = ["status", "bound", "species", "division", "preparation"];
+  // optional table columns; Tissue and Value are always shown
+  const COLUMNS = [["id", "Row ID"], ["links", "Links (suggest fix, comments)"], ["reported", "Reported value"], ["notes", "Notes"],
+    ["test_freq_mhz", "Test frequency"], ["exponent_b", "Exponent b"], ["db_cm_1mhz", "dB/cm @1 MHz"],
+    ["species", "Species"], ["preparation", "Preparation"], ["status", "Status"], ["bound", "Bound"], ["ref", "Reference"]];
+  const COL_DEFAULT_HIDDEN = ["id", "status"];
+  const OFF_DEFAULT = { status: ["excluded"] }; // facet values unticked on first load
+  const sameSet = (a, b) => a.size === b.length && b.every((x) => a.has(x));
 
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  // facet values of a row; species can list several (`pig;sheep`), each filtered and counted on its own
+  const fvals = (r, f) => f === "species" ? r.species.split(";").map((x) => x.trim()).filter(Boolean) : [r[f]];
 
   // ---------- CSV ----------
   function parseCSV(text) {
@@ -46,16 +55,37 @@
   }).join(","))).join("\n");
 
   // ---------- state ----------
-  const DEFAULT = () => ({ tissue: "skull", props: new Set(), off: Object.fromEntries(FACETS.map((f) => [f, new Set()])), refsOff: new Set(), deep: false, q: "", hl: "", sort: {} });
+  const DEFAULT = () => ({ tissue: "skull", props: new Set(), off: Object.fromEntries(FACETS.map((f) => [f, new Set(OFF_DEFAULT[f] || [])])), refsOff: new Set(), deep: false, q: "", hl: "", sort: {}, hide: new Set(COL_DEFAULT_HIDDEN) });
   let S = DEFAULT();
-  let DATA = [], REFS = {}, COLS = [];
+  let DATA = [], REFS = {}, COLS = [], META = {}, BOUNDS = [], BV = "";
+  let VERSIONS = [], CURRENT = ""; // data/versions.json (written at deploy); CURRENT = newest data on the site
+
+  // ---------- LOW/HIGH bounds (versioned, data/bounds.csv) ----------
+  const vkey = (v) => v.split(".").map(Number).reduce((a, x) => a * 1000 + x, 0);
+  const boundVersions = () => [...new Set(BOUNDS.map((b) => b.version))].sort((a, b) => vkey(b) - vkey(a));
+  let BMAP = {}; // `${tissue}|${property}` -> {low:{...}, high:{...}, uniform:{...}}
+  function applyBounds() {
+    const cur = boundVersions();
+    if (!cur.includes(BV)) BV = cur[0] || "";
+    BMAP = {};
+    BOUNDS.filter((b) => b.version === BV).forEach((b) => { (BMAP[`${b.tissue}|${b.property}`] = BMAP[`${b.tissue}|${b.property}`] || {})[b.bound] = b; });
+    const byId = {};
+    Object.values(BMAP).forEach((o) => Object.values(o).forEach((b) => { if (b.id) byId[b.id] = (byId[b.id] ? byId[b.id] + "+" : "") + b.bound; }));
+    DATA.forEach((r) => { r.bound = byId[r.id] || "none"; });
+    // what changed relative to the previous version (for the version note)
+    const prev = cur[cur.indexOf(BV) + 1];
+    BOUNDS_CHANGED = prev ? BOUNDS.filter((b) => b.version === BV && !BOUNDS.some((o) => o.version === prev && o.tissue === b.tissue && o.property === b.property && o.bound === b.bound && +o.value === +b.value)).length : null;
+  }
+  let BOUNDS_CHANGED = null;
+  const BLABEL = { low: "LOW", high: "HIGH", reference: "BENCHMARK", uniform: "ref." };
+  const boundPill = (b) => b === "none" ? "" : b.split("+").map((x) => `<span class="bpill b-${x}">${x === "uniform" ? "ref." : x.toUpperCase()}</span>`).join(" ");
 
   function readHash() {
     const p = new URLSearchParams(location.hash.slice(1));
     const s = DEFAULT();
     if (p.has("t")) s.tissue = p.get("t");
     if (p.get("p")) s.props = new Set(p.get("p").split(","));
-    FACETS.forEach((f) => { if (p.get("x" + f)) s.off[f] = new Set(p.get("x" + f).split("|")); });
+    FACETS.forEach((f) => { if (p.has("x" + f)) s.off[f] = new Set(p.get("x" + f).split("|").filter(Boolean)); });
     if (p.get("xr")) s.refsOff = new Set(p.get("xr").split(","));
     if (p.get("r")) { // positive ref list is shorter for typical shares
       const keep = new Set(p.get("r").split(","));
@@ -64,13 +94,17 @@
     s.deep = p.get("deep") === "1";
     s.q = p.get("q") || "";
     s.hl = p.get("hl") || "";
+    if (p.has("hc")) s.hide = new Set(p.get("hc").split(",").filter(Boolean));
+    if (MODES[p.get("cmp")]) CMP.mode = p.get("cmp");
+    CMP.values = p.get("cv") !== "0"; CMP.water = p.get("cw") === "1"; CMP.bench = p.get("bm") === "1";
+    CMP.hidden = new Set(p.get("ch") ? p.get("ch").split("|") : []);
     return s;
   }
   function writeHash() {
     const p = new URLSearchParams();
     if (S.tissue !== "skull") p.set("t", S.tissue);
     if (S.props.size) p.set("p", [...S.props].join(","));
-    FACETS.forEach((f) => { if (S.off[f].size) p.set("x" + f, [...S.off[f]].join("|")); });
+    FACETS.forEach((f) => { if (!sameSet(S.off[f], OFF_DEFAULT[f] || [])) p.set("x" + f, [...S.off[f]].join("|")); }); // empty value = all ticked
     if (S.refsOff.size) {
       const used = usedRefKeys(DATA);
       const on = used.filter((k) => !S.refsOff.has(k));
@@ -79,6 +113,13 @@
     if (S.deep) p.set("deep", "1");
     if (S.q) p.set("q", S.q);
     if (S.hl) p.set("hl", S.hl);
+    if (META.version && META.version !== CURRENT) p.set("v", META.version);
+    if (CMP.mode !== "tissue") p.set("cmp", CMP.mode);
+    if (!CMP.values) p.set("cv", "0");
+    if (CMP.water) p.set("cw", "1");
+    if (CMP.bench) p.set("bm", "1");
+    if ([...S.hide].sort().join(",") !== COL_DEFAULT_HIDDEN.slice().sort().join(",")) p.set("hc", [...S.hide].join(","));
+    if (CMP.hidden.size) p.set("ch", [...CMP.hidden].join("|"));
     const h = p.toString();
     history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
   }
@@ -101,7 +142,7 @@
     return DATA.filter((r) =>
       (S.tissue === "all" || r.tissue === S.tissue) &&
       (except === "props" || !S.props.size || S.props.has(r.property)) &&
-      FACETS.every((f) => f === except || !S.off[f].has(r[f])) &&
+      FACETS.every((f) => f === except || fvals(r, f).every((v) => !S.off[f].has(v))) &&
       (except === "refs" || passRef(r)) && passQ(r));
   }
 
@@ -116,7 +157,7 @@
 
     FACETS.forEach((f) => {
       const scope = DATA.filter((r) => S.tissue === "all" || r.tissue === S.tissue);
-      const vals = [...new Set(scope.map((r) => r[f]))].sort();
+      const vals = [...new Set(scope.flatMap((r) => fvals(r, f)))].sort();
       const c = count(filter(f), f);
       $("#f-" + f).innerHTML = vals.map((v) =>
         `<label class="${c[v] ? "" : "zero"}"><input type="checkbox" data-f="${f}" value="${esc(v)}" ${S.off[f].has(v) ? "" : "checked"}> ${esc(v)} <span class="n">${c[v] || 0}</span></label>`).join("");
@@ -135,7 +176,7 @@
     $("#ref-deep").checked = S.deep;
     if ($("#q").value !== S.q) $("#q").value = S.q;
   }
-  const count = (rows, f) => rows.reduce((a, r) => ((a[r[f]] = (a[r[f]] || 0) + 1), a), {});
+  const count = (rows, f) => rows.reduce((a, r) => (fvals(r, f).forEach((v) => (a[v] = (a[v] || 0) + 1)), a), {});
 
   function shortRef(k) {
     const c = REFS[k]?.citation;
@@ -155,7 +196,7 @@
     if (v === "" || v == null) return "";
     const x = +v;
     if (!isFinite(x)) return esc(v);
-    if (x !== 0 && Math.abs(x) < 0.01) return x.toPrecision(3);
+    if (x !== 0 && Math.abs(x) < 0.01) return String(+x.toPrecision(3));
     return x.toLocaleString("en-US", { maximumFractionDigits: 3 });
   }
   const valStr = (r) => r.value === "" ? "—" : fmt(r.value) + (r.value_max ? "–" + fmt(r.value_max) : "");
@@ -178,7 +219,7 @@
   function strip(rows) {
     const pts = rows.filter((r) => r.value !== "");
     if (!pts.length) return "";
-    const W = Math.max(280, ($("#results").clientWidth || 1000) - 2), H = 70, L = 16, R = 16, Y = 28;
+    const W = Math.max(280, ($("#results").clientWidth || 1000) - 2), H = 84, L = 16, R = 16, Y = 42;
     let lo = Math.min(...pts.map((r) => +r.value)), hi = Math.max(...pts.map((r) => +(r.value_max || r.value)));
     if (lo === hi) { lo -= Math.abs(lo) * 0.05 || 1; hi += Math.abs(hi) * 0.05 || 1; }
     const pad = (hi - lo) * 0.04; lo -= pad; hi += pad;
@@ -188,6 +229,9 @@
     const st = rangeStats(rows);
     const band = st ? `<rect class="band" x="${x(st.lo)}" y="${Y - 14}" width="${Math.max(2, x(st.hi) - x(st.lo))}" height="28" rx="3"/>
       <line class="median" x1="${x(st.m)}" x2="${x(st.m)}" y1="${Y - 14}" y2="${Y + 14}"><title>median ${fmt(st.m)}</title></line>` : "";
+    const bd = BMAP[`${rows[0].tissue}|${rows[0].property}`] || {};
+    const blines = ["low", "high", ...(CMP.bench ? ["reference"] : []), "uniform"].filter((k) => bd[k] && +bd[k].value >= lo && +bd[k].value <= hi).map((k) =>
+      `<g class="bline b-${k}"><line x1="${x(+bd[k].value)}" x2="${x(+bd[k].value)}" y1="${Y - 22}" y2="${Y + 18}"/><text x="${x(+bd[k].value)}" y="${Y - 24}" text-anchor="${k === "low" ? "start" : k === "high" ? "end" : "middle"}" dx="${k === "low" ? 3 : k === "high" ? -3 : 0}">${BLABEL[k]} ${fmt(bd[k].value)}</text><title>${k === "reference" ? "reference benchmark" : k + " bound"} ${fmt(bd[k].value)} (v${BV})${bd[k].notes ? " — " + esc(bd[k].notes) : ""}</title></g>`).join("");
     const marks = pts.map((r) => {
       const ex = r.status === "excluded" ? " excl" : r.status === "proposed" ? " proposed" : "";
       const on = S.hl && rowKeys(r).includes(S.hl) ? " on" : "";
@@ -201,7 +245,7 @@
       ${band}
       <line class="axis" x1="${L}" x2="${W - R}" y1="${Y + 18}" y2="${Y + 18}"/>
       ${ticks.map((t) => `<line class="axis" x1="${x(t)}" x2="${x(t)}" y1="${Y + 18}" y2="${Y + 22}"/><text x="${x(t)}" y="${H - 6}" text-anchor="middle">${fmt(t)}</text>`).join("")}
-      ${marks}</svg>`;
+      ${blines}${marks}</svg>`;
   }
   function niceTicks(lo, hi, n) {
     const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
@@ -216,8 +260,9 @@
       ["division", "Tissue"], ["value", "Value", "num"], ["reported", "Reported"],
       ...(att || rows.some((r) => r.test_freq_mhz) ? [["test_freq_mhz", "f (MHz)", "num"]] : []),
       ...(att ? [["exponent_b", "b", "num"], ["db_cm_1mhz", "dB/cm @1 MHz", "num"]] : []),
-      ["species", "Species"], ["preparation", "Preparation"], ["status", "Status"], ["ref", "Reference"],
-    ];
+      ["species", "Species"], ["preparation", "Preparation"], ["status", "Status"], ["bound", "Bound"], ["ref", "Reference"],
+    ].filter(([k]) => !S.hide.has(k));
+    const show = (k) => !S.hide.has(k);
     const key = `${rows[0].tissue}:${prop}`;
     const so = S.sort[key] || { k: "value", d: 1 };
     const sorted = rows.slice().sort((a, b) => {
@@ -225,30 +270,42 @@
       const c = isFinite(an) && isFinite(bn) ? an - bn : String(so.k === "ref" ? shortRef(av) : av).localeCompare(String(so.k === "ref" ? shortRef(bv) : bv));
       return c * so.d;
     });
-    const th = cols.map(([k, n, c]) => `<th data-sort="${k}" data-key="${key}" class="${c || ""} ${so.k === k ? (so.d > 0 ? "asc" : "desc") : ""}">${n}</th>`).join("");
+    const th = cols.map(([k, n, c]) => `<th data-sort="${k}" data-key="${key}" tabindex="0" aria-sort="${so.k === k ? (so.d > 0 ? "ascending" : "descending") : "none"}" class="${c || ""} ${so.k === k ? (so.d > 0 ? "asc" : "desc") : ""}">${n}</th>`).join("");
     const tr = sorted.map((r) => {
       const ex = r.status === "excluded";
       const hl = S.hl && rowKeys(r).includes(S.hl);
       const via = r.via ? `<span class="sub">via <button class="refbtn" data-hl="${r.via}">${esc(shortRef(r.via))}</button></span>` : "";
       const src = r.sources ? `<span class="sub">sources: ${r.sources.split(";").map((k) => `<button class="refbtn" data-hl="${k}">${esc(shortRef(k))}</button>`).join(", ")}</span>` : "";
-      const edit = CFG.repo && CFG.repo !== "#" ? ` <a class="edit" href="${CFG.repo}/blob/${CFG.branch}/${CFG.dir || ""}data/measurements.csv#L${r._line}" target="_blank" rel="noopener">source</a> · <a class="edit" href="${CFG.repo}/issues/new?template=correction.yml&title=${encodeURIComponent("Correction: " + r.id)}&row_id=${r.id}" target="_blank" rel="noopener">suggest fix</a>` : "";
+      const edit = CFG.repo && CFG.repo !== "#" ? ` <a class="edit" href="${CFG.repo}/issues/new?template=correction.yml&title=${encodeURIComponent("Correction: " + r.id)}&row_id=${r.id}" target="_blank" rel="noopener">suggest fix</a>` : "";
+      const nc = COMMENTS[r.id] || 0;
+      const discuss = giscusOn() ? ` · <button type="button" class="edit linklike" data-discuss="${r.id}" aria-expanded="${openThread === r.id}">${openThread === r.id ? "hide comments" : nc ? `comments (${nc})` : "comment"}</button>` : "";
       const cells = cols.map(([k, , c]) => {
-        if (k === "division") return `<td>${esc(r.label)}<span class="sub"><span class="id">${r.id}</span>${edit}</span></td>`;
+        if (k === "division") {
+          // links sit under the reference; here only when the Reference column is hidden
+          const sub = [show("id") ? `<span class="id">${r.id}</span>` : "", show("links") && !show("ref") ? (show("id") ? edit : edit.replace(/^ /, "")) + discuss : ""].join("");
+          const note = r.notes && show("notes") && !show("reported") ? `<span class="sub">${esc(r.notes)}</span>` : "";
+          return `<td>${esc(r.label)}${sub ? `<span class="sub">${sub}</span>` : ""}${note}</td>`;
+        }
         if (k === "value") return `<td class="num val">${valStr(r)}</td>`;
-        if (k === "reported") return `<td class="reported">${esc(r.reported)}${r.notes ? `<span class="sub">${esc(r.notes)}</span>` : ""}</td>`;
+        if (k === "reported") return `<td class="reported">${esc(r.reported)}${r.notes && show("notes") ? `<span class="sub">${esc(r.notes)}</span>` : ""}</td>`;
         if (k === "species" || k === "preparation") return `<td class="cat">${esc(r[k])}</td>`;
+        if (k === "bound") return `<td class="cat">${boundPill(r.bound)}</td>`;
         if (k === "status") return `<td class="cat st-${r.status}">${esc(r.status)}</td>`;
-        if (k === "ref") return `<td><button class="refbtn" data-hl="${r.ref}">${esc(shortRef(r.ref))}</button>${via}${src}</td>`;
+        if (k === "ref") {
+          const links = show("links") && (edit || discuss) ? `<span class="sub">${(edit + discuss).replace(/^ · /, "").replace(/^ /, "")}</span>` : "";
+          return `<td><button class="refbtn" data-hl="${r.ref}">${esc(shortRef(r.ref))}</button>${via}${src}${links}</td>`;
+        }
         return `<td class="${c || ""}">${k === "test_freq_mhz" ? esc(r[k]) : fmt(r[k])}</td>`;
       }).join("");
-      return `<tr id="row-${r.id}" class="${ex ? "excl" : ""} ${hl ? "hl" : ""}">${cells}</tr>`;
+      const thread = openThread === r.id ? `<tr class="thread-row"><td colspan="${cols.length}"><div class="thread" id="thread-host"></div></td></tr>` : "";
+      return `<tr id="row-${r.id}" class="${ex ? "excl" : ""} ${hl ? "hl" : ""} ${r.bound !== "none" ? "brow b-" + r.bound.split("+")[0] : ""}">${cells}</tr>${thread}`;
     }).join("");
     return `<div class="tbl-wrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`;
   }
 
   // ---------- overview: all tissues ----------
   function overviewRows() {
-    return DATA.filter((r) => FACETS.every((f) => !S.off[f].has(r[f])) && passRef(r) && passQ(r));
+    return DATA.filter((r) => FACETS.every((f) => fvals(r, f).every((v) => !S.off[f].has(v))) && passRef(r) && passQ(r));
   }
   function renderOverview() {
     const rows = overviewRows();
@@ -262,55 +319,233 @@
     const head = `<thead><tr><th>Property</th>${TISSUES.map((t) => `<th class="num t-${t}">${cap(t)}</th>`).join("")}</tr></thead>`;
     const body = props.map((p) => `<tr><td class="prop">${PROPS[p].name}<span class="sub">${PROPS[p].unit}</span></td>${TISSUES.map((t) => {
       const v = st[p][t];
-      if (!v) return `<td class="none">—</td>`;
+      const bd = BMAP[`${t}|${p}`];
+      const btxt = bd ? (bd.uniform ? `ref. ${fmt(bd.uniform.value)}` : `bounds ${bd.low ? fmt(bd.low.value) : "?"}–${bd.high ? fmt(bd.high.value) : "?"}${bd.reference && CMP.bench ? `</span><span class="sub bsub bref">benchmark ${fmt(bd.reference.value)}` : ""}`) : "";
+      if (!v) return `<td class="none">—${btxt ? `<span class="sub bsub">${btxt}</span>` : ""}</td>`;
       const r = v.lo === v.hi ? fmt(v.lo) : `${fmt(v.lo)}–${fmt(v.hi)}`;
-      return `<td><button type="button" class="cellbtn" data-ov="${t}|${p}" title="Show ${t} ${PROPS[p].name.toLowerCase()} values"><span class="rng-txt">${r}</span><span class="sub">median ${fmt(v.m)} · n ${v.n}</span></button></td>`;
+      return `<td><button type="button" class="cellbtn" data-ov="${t}|${p}" title="Show ${t} ${PROPS[p].name.toLowerCase()} values"><span class="rng-txt">${r}</span><span class="sub">median ${fmt(v.m)} · n ${v.n}</span>${btxt ? `<span class="sub bsub">${btxt}</span>` : ""}</button></td>`;
     }).join("")}</tr>`).join("");
     $("#ov-table").innerHTML = props.length ? head + `<tbody>${body}</tbody>` : `<tbody><tr><td class="none">No values match the current filters.</td></tr></tbody>`;
 
-    // parallel axes
-    const box = $("#ov-chart");
-    const cp = chartProps();
-    const W = Math.max(cp.length * 92, box.clientWidth || 600);
-    const n = cp.length || 1, cw = W / n;
-    const H = 320, top = 44, bot = H - 58;
-    const narrow = cw < 74;
-    const cols = cp.map((p, i) => {
-      const vals = ["skull", "brain"].flatMap((t) => st[p][t] ? [st[p][t].lo, st[p][t].hi] : []);
-      let lo = Math.min(...vals), hi = Math.max(...vals);
-      if (lo === hi) { lo -= Math.abs(lo) * 0.1 || 1; hi += Math.abs(hi) * 0.1 || 1; }
-      const ticks = niceTicks(lo, hi, 5), step = ticks.length > 1 ? ticks[1] - ticks[0] : (hi - lo);
-      let a = Math.floor(lo / step + 1e-9) * step, b = Math.ceil(hi / step - 1e-9) * step;
-      if (lo >= 0 && a < 0) a = 0;
-      const y = (v) => bot - ((v - a) / (b - a)) * (bot - top);
-      const ax = i * cw + Math.min(14, cw * 0.15);
-      const bw = Math.max(8, Math.min(22, (cw - 34) / 2.4));
-      const xs = { brain: ax + 8, skull: ax + 8 + bw + 5 };
-      const minor = []; for (let v = a; v <= b + step / 2; v += step) minor.push(v);
-      const bars = ["brain", "skull"].map((t) => {
-        const v = st[p][t]; if (!v) return "";
-        const y1 = y(v.hi), y2 = y(v.lo), h = Math.max(3, y2 - y1);
-        return `<rect class="bar-${t}" x="${xs[t]}" y="${y2 - h === y1 ? y1 : y2 - h}" width="${bw}" height="${h}"><title>${cap(t)} ${PROPS[p].name.toLowerCase()}: ${fmt(v.lo)}–${fmt(v.hi)} ${PROPS[p].unit} (median ${fmt(v.m)}, n ${v.n})</title></rect>
-          <ellipse class="med" cx="${xs[t] + bw / 2}" cy="${y(v.m)}" rx="2.6" ry="5.5"><title>median ${fmt(v.m)}</title></ellipse>`;
-      }).join("");
-      const name = PROPS[p].name.split(" ");
-      const unit = PROPS[p].unit.replace(" @ 0.5 MHz", " @0.5MHz");
-      return `<g class="col${S.props.has(p) ? " sel" : ""}" data-ovp="${p}">
-        <rect x="${i * cw}" y="0" width="${cw}" height="${H}" fill="transparent"/>
-        <text class="lbl-unit" x="${ax}" y="13">${narrow ? "" : esc(unit)}</text>
-        <text class="lbl-lim" x="${ax}" y="${top - 8}" text-anchor="${i === 0 ? "start" : "middle"}">${fmt(b)}</text>
-        <line class="ax" x1="${ax}" x2="${ax}" y1="${top}" y2="${bot}"/>
-        ${minor.map((v) => `<line class="tk" x1="${ax}" x2="${ax + 4}" y1="${y(v)}" y2="${y(v)}"/>`).join("")}
-        <text class="lbl-lim" x="${ax}" y="${bot + 16}" text-anchor="${i === 0 ? "start" : "middle"}">${fmt(a)}</text>
-        ${bars}
-        <text class="lbl-prop" x="${ax}" y="${bot + 36}">${esc(name[0])}${name.length > 1 ? `<tspan x="${ax}" dy="14">${esc(name.slice(1).join(" "))}</tspan>` : ""}</text>
-        <title>${PROPS[p].name} (${PROPS[p].unit}) — click to filter</title>
-      </g>`;
-    }).join("");
-    box.innerHTML = cp.length ? `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Ranges of each property for skull and brain on parallel axes">${cols}</svg>` : "";
+    renderChart(rows);
   }
 
-  let current = [];
+  // ---------- comparison chart (overview): user-selected grouping ----------
+  const CMP = { mode: "tissue", values: true, water: false, bench: false, hidden: new Set() };
+  const SKULL_LAYER = { cortical: "cortical", "cortical (outer table)": "cortical", "cortical (inner table)": "cortical", cancellous: "trabecular", "diploë": "trabecular" };
+  const tok = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const NEUTRAL = new Set(["unspecified", "n/a"]);
+  const T = (t) => (r) => r.tissue === t;
+  const G = (key, label, color, test, tissue, anchor) => ({ key, label, color, test, tissue, anchor });
+  const MODES = {
+    tissue: { label: "Tissue", groups: () => [
+      G("brain", "brain", "--brain", T("brain"), "brain", true),
+      G("skull", "skull", "--skull", T("skull"), "skull", true),
+      ...(CMP.water ? [G("water", "water", "--water", T("water"), "water", true)] : [])] },
+    skull_layer: { label: "Skull layer", groups: () => [
+      G("brain", "brain", "--brain", T("brain"), "brain", true),
+      G("skull", "skull (all)", "--skull", T("skull"), "skull", true),
+      G("skull-unclear", "skull (layer unclear)", "--sk-unclear", (r) => r.tissue === "skull" && !SKULL_LAYER[r.division], "skull"),
+      G("skull-cortical", "skull cortical", "--sk-cortical", (r) => r.tissue === "skull" && SKULL_LAYER[r.division] === "cortical", "skull"),
+      G("skull-trabecular", "skull trabecular", "--sk-trabecular", (r) => r.tissue === "skull" && SKULL_LAYER[r.division] === "trabecular", "skull")] },
+    brain_region: { label: "Brain region", groups: () => [
+      G("skull", "skull", "--skull", T("skull"), "skull", true),
+      G("brain", "brain (all)", "--brain", (r) => r.tissue === "brain" && !r.division.startsWith("proxy"), "brain", true),
+      G("brain-gray", "gray matter", "--c1", (r) => r.tissue === "brain" && r.division === "gray matter", "brain"),
+      G("brain-white", "white matter", "--c2", (r) => r.tissue === "brain" && r.division === "white matter", "brain"),
+      G("brain-unclear", "brain (region unclear)", "--c5", (r) => r.tissue === "brain" && !["gray matter", "white matter"].includes(r.division) && !r.division.startsWith("proxy"), "brain"),
+      G("brain-proxy", "non-brain proxy", "--c4", (r) => r.tissue === "brain" && r.division.startsWith("proxy"), "brain")] },
+    species: { label: "Species", field: "species" },
+    preparation: { label: "Preparation", field: "preparation" },
+    status: { label: "Status", field: "status" },
+  };
+  // colour follows the value, assigned once from the full dataset (most frequent first)
+  function facetColors(field) {
+    const n = {};
+    DATA.filter((r) => r.tissue !== "water").forEach((r) => fvals(r, field).forEach((v) => { n[v] = (n[v] || 0) + 1; }));
+    const vals = Object.keys(n).filter((v) => !NEUTRAL.has(v)).sort((a, b) => n[b] - n[a] || a.localeCompare(b));
+    const col = {};
+    vals.forEach((v, i) => { col[v] = i < 8 ? `--c${i + 1}` : "--muted"; });
+    Object.keys(n).filter((v) => NEUTRAL.has(v)).forEach((v) => { col[v] = "--muted"; });
+    return { vals: vals.concat(Object.keys(n).filter((v) => NEUTRAL.has(v))), col };
+  }
+  function chartFacets() {
+    const m = MODES[CMP.mode] || MODES.tissue;
+    if (!m.field) return [{ title: "", groups: m.groups() }];
+    const { vals, col } = facetColors(m.field);
+    const tissues = ["skull", "brain"].concat(CMP.water ? ["water"] : []);
+    return tissues.map((t) => ({
+      title: cap(t), tissue: t,
+      groups: vals.filter((v) => DATA.some((r) => r.tissue === t && fvals(r, m.field).includes(v)))
+        .map((v) => ({ key: v, label: v, color: col[v], test: (r) => r.tissue === t && fvals(r, m.field).includes(v), tissue: t })),
+    }));
+  }
+  function legendItems(facets) {
+    const seen = new Map();
+    facets.forEach((f) => f.groups.forEach((g) => { if (!seen.has(g.key)) seen.set(g.key, g); }));
+    return [...seen.values()];
+  }
+  function hash32(s) { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return ((h >>> 0) % 1000) / 1000; }
+
+  function renderChart(rowsIn) {
+    const box = $("#ov-chart");
+    const m = MODES[CMP.mode] || MODES.tissue;
+    const useExcl = CMP.mode === "status";
+    const rows = rowsIn.filter((r) => r.value !== "" && (useExcl || r.status !== "excluded"));
+    const facets = chartFacets();
+    const legend = legendItems(facets);
+    facets.forEach((f) => { f.vis = f.groups.filter((g) => !CMP.hidden.has(g.key)); });
+    const props = Object.keys(PROPS).filter((p) => facets.some((f) => f.vis.some((g) => rows.some((r) => r.property === p && g.test(r)))));
+    const col = (v) => tok(v) || v;
+    const ink = tok("--text"), muted = tok("--muted"), surface = tok("--bg"), marker = tok("--marker"), bench = tok("--bench");
+    const font = getComputedStyle(document.body).fontFamily.replace(/"/g, "'");
+
+    const maxG = Math.max(1, ...facets.map((f) => f.vis.length));
+    const bw = 14, gap = 5;
+    const need = 56 + maxG * (bw + gap) + 14;
+    const W0 = Math.max(box.clientWidth || 800, 320);
+    const cw = Math.max(need, props.length ? W0 / props.length : W0);
+    const W = Math.max(W0, cw * props.length);
+
+    // legend (inside the SVG so exports carry it)
+    let lx = 8, ly = 16; const lrows = [];
+    const litems = legend.map((g) => ({ g, w: 22 + g.label.length * 6.6 + 16 }))
+      .concat([{ dot: true, w: 22 + 15 * 6.6 }, { bnd: true, w: 22 + 16 * 6.6 }, ...(CMP.bench ? [{ ref: true, w: 22 + 19 * 6.6 }] : [])]);
+    const lsvg = litems.map((it) => {
+      if (lx + it.w > W0 - 8) { lx = 8; ly += 20; }
+      const x = lx; lx += it.w;
+      if (it.dot) return `<g><circle cx="${x + 6}" cy="${ly - 4}" r="3" fill="${marker}"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12">literature value</text></g>`;
+      if (it.ref) return `<g><line x1="${x}" x2="${x + 12}" y1="${ly - 4}" y2="${ly - 4}" stroke="${bench}" stroke-width="3"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12">reference benchmark</text></g>`;
+      if (it.bnd) return `<g><line x1="${x}" x2="${x + 12}" y1="${ly - 4}" y2="${ly - 4}" stroke="${marker}" stroke-width="2"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12">LOW / HIGH bound</text></g>`;
+      const off = CMP.hidden.has(it.g.key);
+      return `<g class="lg" data-grp="${esc(it.g.key)}" tabindex="0" role="button" aria-pressed="${!off}" style="cursor:pointer" opacity="${off ? 0.35 : 1}"><title>${off ? "Show" : "Hide"} ${esc(it.g.label)}</title><rect x="${x}" y="${ly - 11}" width="12" height="12" rx="2" fill="${col(it.g.color)}"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12" font-weight="600">${esc(it.g.label)}</text></g>`;
+    }).join("");
+    const legendH = ly + 14;
+
+    const facetH = 230, titleH = m.field ? 18 : 0, nameH = 40;
+    const H = legendH + facets.length * (facetH + titleH) + nameH;
+    let svg = "";
+    props.forEach((p, i) => {
+      const x0 = i * cw, ax = x0 + 46;
+      // scale: shared across groups in one row; per row when faceted (rows differ by tissue)
+      const scaleFor = (fs) => {
+        const vals = [];
+        fs.forEach((f) => f.vis.forEach((g) => rows.filter((r) => r.property === p && g.test(r)).forEach((r) => { vals.push(+r.value); if (r.value_max) vals.push(+r.value_max); })));
+        new Set(fs.flatMap((f) => f.vis.map((g) => g.tissue))).forEach((t) => ["low", "high", "reference"].forEach((k) => { const bd = BMAP[`${t}|${p}`]?.[k]; if (bd && t !== "water") vals.push(+bd.value); }));
+        if (!vals.length) return null;
+        let lo = Math.min(...vals), hi = Math.max(...vals);
+        if (lo === hi) { lo -= Math.abs(lo) * 0.1 || 1; hi += Math.abs(hi) * 0.1 || 1; }
+        const tk = niceTicks(lo, hi, 5), step = tk.length > 1 ? tk[1] - tk[0] : hi - lo;
+        let a = Math.floor(lo / step + 1e-9) * step; const b = Math.ceil(hi / step - 1e-9) * step;
+        if (lo >= 0 && a < 0) a = 0;
+        return { a, b, step };
+      };
+      const shared = scaleFor(facets);
+      if (!shared) return;
+      const unit = PROPS[p].unit.replace(" @ 0.5 MHz", " @0.5MHz");
+      let colSvg = `<rect x="${x0}" y="${legendH}" width="${cw}" height="${H - legendH}" fill="transparent"/>`;
+      facets.forEach((f, fi) => {
+        const { a, b, step } = (m.field && scaleFor([f])) || shared;
+        const top0 = legendH + fi * (facetH + titleH) + titleH;
+        const top = top0 + 34, bot = top0 + facetH - 22;
+        const y = (v) => bot - ((v - a) / (b - a)) * (bot - top);
+        if (titleH && i === 0) colSvg += `<text x="${x0 + 4}" y="${top0 - 4}" fill="${ink}" font-size="13" font-weight="700">${esc(f.title)}</text>`;
+        colSvg += `<text x="${ax + 4}" y="${top0 + 12}" fill="${muted}" font-size="11" font-style="italic">${esc(unit)}</text>
+          <text x="${ax - 4}" y="${top + 4}" fill="${muted}" font-size="11" text-anchor="end">${fmt(b)}</text>
+          <text x="${ax - 4}" y="${bot + 4}" fill="${muted}" font-size="11" text-anchor="end">${fmt(a)}</text>
+          <line x1="${ax}" x2="${ax}" y1="${top}" y2="${bot}" stroke="${ink}" stroke-width="1"/>`;
+        for (let v = a; v <= b + step / 2; v += step) colSvg += `<line x1="${ax}" x2="${ax + 4}" y1="${y(v)}" y2="${y(v)}" stroke="${muted}"/>`;
+        f.vis.forEach((g, gi) => {
+          const bx = ax + 10 + gi * (bw + gap);
+          const rs = rows.filter((r) => r.property === p && g.test(r));
+          if (!rs.length) { colSvg += `<text transform="translate(${bx + bw / 2 + 4},${bot - 4}) rotate(-90)" fill="${muted}" font-size="11">n/a</text>`; return; }
+          const st = rangeStats(useExcl ? rs.map((r) => ({ ...r, status: "included" })) : rs);
+          const y1 = y(st.hi), y2 = y(st.lo), h = Math.max(3, y2 - y1);
+          colSvg += `<rect x="${bx}" y="${y2 - h}" width="${bw}" height="${h}" fill="${col(g.color)}"><title>${esc(g.label)} · ${PROPS[p].name.toLowerCase()}: ${fmt(st.lo)}–${fmt(st.hi)} ${PROPS[p].unit} (median ${fmt(st.m)}, n ${st.n})</title></rect>`;
+          if (g.anchor) ["low", "high"].forEach((k) => {
+            const bd = BMAP[`${g.tissue}|${p}`]?.[k]; if (!bd) return;
+            colSvg += `<line x1="${bx - 4}" x2="${bx + bw + 4}" y1="${y(+bd.value)}" y2="${y(+bd.value)}" stroke="${marker}" stroke-width="2"><title>${cap(g.tissue)} ${k.toUpperCase()} bound ${fmt(bd.value)} (v${BV})</title></line>`;
+          });
+          const rb = CMP.bench && g.anchor && BMAP[`${g.tissue}|${p}`]?.reference;
+          if (rb) colSvg += `<line x1="${bx - 6}" x2="${bx + bw + 6}" y1="${y(+rb.value)}" y2="${y(+rb.value)}" stroke="${bench}" stroke-width="3" pointer-events="none"><title>${cap(g.tissue)} reference benchmark ${fmt(rb.value)} (v${BV})</title></line>`;
+          if (CMP.values) {
+            rs.forEach((r) => {
+              const jx = bx + bw / 2 + (hash32(r.id) - 0.5) * bw * 0.6;
+              const t = `<title>${esc(r.label)} — ${valStr(r)} (${esc(shortRef(r.ref))}) · click to open</title>`;
+              if (r.value_max) colSvg += `<g data-goto="${r.id}" tabindex="0" role="button" aria-label="Open ${r.id}" style="cursor:pointer"><line x1="${jx}" x2="${jx}" y1="${y(+r.value)}" y2="${y(+r.value_max)}" stroke="${marker}" stroke-width="1.5"/><circle cx="${jx}" cy="${y(+r.value)}" r="2.4" fill="${marker}"/><circle cx="${jx}" cy="${y(+r.value_max)}" r="2.4" fill="${marker}"/>${t}</g>`;
+              else colSvg += `<circle data-goto="${r.id}" tabindex="0" role="button" aria-label="Open ${r.id}" style="cursor:pointer" cx="${jx}" cy="${y(+r.value)}" r="3" fill="${r.status === "excluded" ? "none" : marker}" stroke="${marker}" stroke-width="${r.status === "excluded" ? 1.2 : 0}">${t}</circle>`;
+            });
+          } else {
+            colSvg += `<ellipse cx="${bx + bw / 2}" cy="${y(st.m)}" rx="2.6" ry="5" fill="${marker}"><title>median ${fmt(st.m)}</title></ellipse>`;
+          }
+        });
+        if (!g0anchor(f) && f.tissue && f.vis.length) ["low", "high", ...(CMP.bench ? ["reference"] : [])].forEach((k) => {
+          const bd = BMAP[`${f.tissue}|${p}`]?.[k]; if (!bd) return;
+          const xe = ax + 10 + f.vis.length * (bw + gap), rf = k === "reference";
+          colSvg += `<line x1="${ax + 6}" x2="${xe}" y1="${y(+bd.value)}" y2="${y(+bd.value)}" stroke="${rf ? bench : marker}" stroke-width="${rf ? 2 : 1.5}" stroke-dasharray="${rf ? "none" : "4 3"}" pointer-events="none"><title>${cap(f.tissue)} ${rf ? "reference benchmark" : k.toUpperCase() + " bound"} ${fmt(bd.value)} (v${BV})</title></line>`;
+        });
+      });
+      const name = PROPS[p].name.split(" ");
+      const ny = H - nameH + 16;
+      colSvg += `<text x="${ax}" y="${ny}" fill="${S.props.has(p) ? tok("--accent") : ink}" font-size="13" font-weight="${S.props.has(p) ? 700 : 400}">${esc(name[0])}${name.length > 1 ? `<tspan x="${ax}" dy="15">${esc(name.slice(1).join(" "))}</tspan>` : ""}</text>`;
+      svg += `<g data-ovp="${p}" tabindex="0" role="button" aria-pressed="${S.props.has(p)}" aria-label="${PROPS[p].name}: filter the tables" style="cursor:pointer"><title>${PROPS[p].name} — click to filter the tables</title>${colSvg}</g>`;
+    });
+    box.innerHTML = props.length
+      ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${font}" role="group" aria-label="Literature values per property, grouped by ${esc(m.label.toLowerCase())}"><rect class="bg" width="${W}" height="${H}" fill="${surface}"/>${lsvg}${svg}</svg>`
+      : `<p class="none">No values to plot under the current filters.</p>`;
+  }
+  const g0anchor = (f) => f.vis.some((g) => g.anchor);
+
+  // attach the link before clicking and revoke the URL later (Firefox needs both)
+  function saveBlob(blob, filename) {
+    const u = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), { href: u, download: filename });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 1000);
+  }
+  function exportChart(kind) {
+    const svgEl = $("#ov-chart svg"); if (!svgEl) return;
+    const src = new XMLSerializer().serializeToString(svgEl);
+    const name = `tus_overview_${CMP.mode}_v${META.version || ""}`;
+    if (kind === "svg") { saveBlob(new Blob([src], { type: "image/svg+xml" }), `${name}.svg`); return; }
+    const img = new Image(), w = +svgEl.getAttribute("width"), h = +svgEl.getAttribute("height");
+    img.onload = () => {
+      const c = Object.assign(document.createElement("canvas"), { width: w * 2, height: h * 2 });
+      const ctx = c.getContext("2d"); ctx.scale(2, 2); ctx.drawImage(img, 0, 0);
+      c.toBlob((bl) => saveBlob(bl, `${name}.png`));
+    };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(src);
+  }
+
+  let current = [], lastRow = "", openThread = "", COMMENTS = {};
+
+  // ---------- per-value comment threads (giscus / GitHub Discussions) ----------
+  const giscusOn = () => !!(CFG.giscus && CFG.giscus.repoId && CFG.giscus.categoryId);
+  function giscusTheme() {
+    const t = currentTheme();
+    return t === "system" ? "preferred_color_scheme" : t;
+  }
+  function mountThread() {
+    const host = document.getElementById("thread-host");
+    if (!host || host.dataset.mounted === openThread) return;
+    host.dataset.mounted = openThread;
+    host.innerHTML = `<p class="thread-note">Comments on <b>${esc(openThread)}</b> are public and stored in GitHub Discussions (sign in with GitHub). For a concrete correction, use “suggest fix”.</p><div class="giscus"></div>`;
+    const g = CFG.giscus, s = document.createElement("script");
+    Object.entries({
+      src: "https://giscus.app/client.js", "data-repo": g.repo, "data-repo-id": g.repoId,
+      "data-category": g.category, "data-category-id": g.categoryId,
+      "data-mapping": "specific", "data-term": openThread, "data-strict": "1",
+      "data-reactions-enabled": "0", "data-emit-metadata": "0", "data-input-position": "top",
+      "data-theme": giscusTheme(), "data-lang": "en", "data-loading": "lazy", crossorigin: "anonymous",
+    }).forEach(([k, v]) => s.setAttribute(k, v));
+    s.async = true;
+    host.appendChild(s);
+  }
+  function syncGiscusTheme() {
+    const f = document.querySelector("iframe.giscus-frame");
+    f?.contentWindow?.postMessage({ giscus: { setConfig: { theme: giscusTheme() } } }, "https://giscus.app");
+  }
+  const smooth = () => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
   function renderResults() {
     current = filter();
     $("#count").textContent = `${current.length} of ${DATA.length} values`;
@@ -326,52 +561,126 @@
       return `<section class="card"><div class="card-head"><h2>${cap(t)} · ${PROPS[p]?.name || p} <span class="unit">(${PROPS[p]?.unit || rows[0].unit})</span></h2>${stats(rows)}</div>${strip(rows)}${table(rows, p)}</section>`;
     }).join("");
     $("#results").innerHTML = html || `<div class="empty">No values match the current filters.</div>`;
+    if (openThread) mountThread();
 
     const cited = usedRefKeys(current);
     $("#cited").innerHTML = cited.sort((a, b) => shortRef(a).localeCompare(shortRef(b))).map((k) => {
       const r = REFS[k];
       if (!r) return `<li><span class="key">${k}</span> — missing from references.csv</li>`;
-      return `<li id="ref-${k}">${esc(r.citation)}${r.doi ? ` <a href="https://doi.org/${esc(r.doi)}" target="_blank" rel="noopener">doi:${esc(r.doi)}</a>` : ""} <span class="key">${k}</span></li>`;
+      const n = current.filter((x) => rowKeys(x).includes(k)).length;
+      return `<li id="ref-${k}" class="${S.hl === k ? "hl" : ""}">${esc(r.citation)}${r.doi ? ` <a href="https://doi.org/${esc(r.doi)}" target="_blank" rel="noopener">doi:${esc(r.doi)}</a>` : ""}
+        <span class="ref-actions"><button type="button" class="link-btn" data-back="${k}">↑ ${n} value${n === 1 ? "" : "s"} in table</button></span></li>`;
     }).join("");
   }
 
-  function render() { renderControls(); renderOverview(); renderResults(); writeHash(); }
+  function renderColumnControls() {
+    $("#colpick-list").innerHTML = COLUMNS.map(([k, n]) => `<label><input type="checkbox" data-col="${k}" ${S.hide.has(k) ? "" : "checked"}> ${n}</label>`).join("");
+  }
+  function renderCompareControls() {
+    $("#cmp").innerHTML = Object.entries(MODES).map(([k, m]) => `<option value="${k}" ${k === CMP.mode ? "selected" : ""}>${m.label}</option>`).join("");
+    $("#cmp-values").checked = CMP.values; $("#cmp-water").checked = CMP.water; $("#cmp-bench").checked = CMP.bench;
+  }
+  function gotoRow(id) {
+    const r = DATA.find((x) => x.id === id); if (!r) return;
+    S.tissue = r.tissue; S.props = new Set([r.property]);
+    FACETS.forEach((f) => fvals(r, f).forEach((v) => S.off[f].delete(v)));
+    render();
+    const tr = document.getElementById("row-" + id);
+    if (tr) { tr.scrollIntoView({ behavior: smooth(), block: "center" }); tr.classList.add("flash"); setTimeout(() => tr.classList.remove("flash"), 1400); }
+  }
+  function renderVersion() {
+    const vs = VERSIONS.length ? VERSIONS : [{ version: META.version, date: META.date }];
+    $("#bv").innerHTML = vs.map((x) => `<option value="${x.version}" ${x.version === META.version ? "selected" : ""}>v${x.version}${x.version === CURRENT ? " (current)" : ""}</option>`).join("");
+    const old = META.version !== CURRENT, ban = $("#vbanner");
+    ban.hidden = !old;
+    if (old) ban.innerHTML = `You are viewing database <b>v${esc(META.version)}</b> (${esc(META.date || "")}). The current version is v${esc(CURRENT)}. <button type="button" id="to-current" class="link-btn">Show current version</button>`;
+    $("#bv-note").textContent = BOUNDS_CHANGED == null ? "" : `${BOUNDS_CHANGED} bound${BOUNDS_CHANGED === 1 ? "" : "s"} changed vs. previous version`;
+  }
+  function render() { applyBounds(); renderVersion(); renderCompareControls(); renderColumnControls(); renderControls(); renderOverview(); renderResults(); writeHash(); }
 
   // ---------- events ----------
   function bind() {
+    document.addEventListener("click", (e) => { // close the column menu on an outside click
+      const cp = $(".colpick"); if (cp?.open && !cp.contains(e.target)) cp.open = false;
+    });
     document.addEventListener("click", (e) => {
-      const t = e.target.closest("button, th[data-sort], [data-ovp]");
+      const t = e.target.closest("button, th[data-sort], [data-grp], [data-goto], [data-ovp]");
       if (!t) return;
       if (t.dataset.ov) {
         const [tt, pp] = t.dataset.ov.split("|");
         S.tissue = tt; S.props = new Set([pp]); S.off.division.clear();
-        render(); $(".toolbar").scrollIntoView({ behavior: "smooth", block: "start" }); return;
+        render(); $(".toolbar").scrollIntoView({ behavior: smooth(), block: "start" }); return;
       }
+      if (t.dataset.goto) { gotoRow(t.dataset.goto); return; }
+      if (t.dataset.grp !== undefined) { CMP.hidden.has(t.dataset.grp) ? CMP.hidden.delete(t.dataset.grp) : CMP.hidden.add(t.dataset.grp); renderOverview(); writeHash(); return; }
+      if (t.id === "dl-svg" || t.id === "dl-png") { exportChart(t.id.slice(3)); return; }
       if (t.dataset.ovp) { S.props.has(t.dataset.ovp) ? S.props.delete(t.dataset.ovp) : S.props.add(t.dataset.ovp); }
-      else if (t.id === "theme") { cycleTheme(); return; }
+      else if (t.id === "theme") { cycleTheme(); syncGiscusTheme(); return; }
+      else if (t.id === "to-current") { switchVersion(CURRENT); return; }
+      else if (t.id === "filters-toggle") {
+        const open = $(".filters").classList.toggle("open");
+        t.setAttribute("aria-expanded", open); t.textContent = open ? "Hide filters" : "Show filters";
+        return;
+      }
+      else if (t.dataset.discuss) {
+        openThread = openThread === t.dataset.discuss ? "" : t.dataset.discuss;
+        renderResults();
+        return;
+      }
       else if (t.dataset.t) { S.tissue = t.dataset.t; S.off.division.clear(); }
       else if (t.dataset.p) { S.props.has(t.dataset.p) ? S.props.delete(t.dataset.p) : S.props.add(t.dataset.p); }
       else if (t.dataset.refs === "all") S.refsOff.clear();
       else if (t.dataset.refs === "none") S.refsOff = new Set(usedRefKeys(DATA));
-      else if (t.dataset.hl !== undefined) { S.hl = S.hl === t.dataset.hl ? "" : t.dataset.hl; }
+      else if (t.dataset.hl !== undefined) {
+        // jump to the full reference; highlight its rows; remember where we came from
+        S.hl = t.dataset.hl; lastRow = t.closest("tr")?.id || "";
+        render();
+        const li = document.getElementById("ref-" + S.hl);
+        if (li) { li.scrollIntoView({ behavior: smooth(), block: "center" }); li.classList.add("flash"); setTimeout(() => li.classList.remove("flash"), 1200); }
+        return;
+      }
+      else if (t.dataset.back) {
+        const target = (lastRow && document.getElementById(lastRow)) || document.querySelector("tr.hl");
+        target?.scrollIntoView({ behavior: smooth(), block: "center" });
+        return;
+      }
       else if (t.dataset.sort) {
         const k = t.dataset.key, cur = S.sort[k] || { k: "value", d: 1 };
         S.sort[k] = { k: t.dataset.sort, d: cur.k === t.dataset.sort ? -cur.d : 1 };
       }
-      else if (t.id === "reset") { S = DEFAULT(); $("#ref-search").value = ""; }
-      else if (t.id === "dl") return download();
+      else if (t.id === "reset") { S = { ...DEFAULT(), hide: S.hide }; $("#ref-search").value = ""; } // filters only; keep the column choice
+      else if (t.id === "dl") return download(false);
+      else if (t.id === "dl-all") return download(true);
       else if (t.id === "share") { navigator.clipboard?.writeText(location.href); t.textContent = "Copied"; setTimeout(() => (t.textContent = "Copy link"), 1200); return; }
       else return;
       render();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const t = e.target.closest?.("th[data-sort], [data-grp], [data-goto], [data-ovp]");
+      if (!t || t !== e.target) return;
+      e.preventDefault();
+      const focus = t.dataset.ovp || t.dataset.grp; // keep focus on the redrawn element
+      t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      if (t.dataset.ovp) $(`#ov-chart [data-ovp="${focus}"]`)?.focus();
+      else if (t.dataset.grp !== undefined) $(`#ov-chart [data-grp="${CSS.escape(focus)}"]`)?.focus();
+      else if (t.dataset.sort) $(`th[data-sort="${t.dataset.sort}"][data-key="${t.dataset.key}"]`)?.focus();
     });
     document.addEventListener("change", (e) => {
       const t = e.target;
       if (t.dataset.f) { t.checked ? S.off[t.dataset.f].delete(t.value) : S.off[t.dataset.f].add(t.value); }
       else if (t.dataset.ref) { t.checked ? S.refsOff.delete(t.dataset.ref) : S.refsOff.add(t.dataset.ref); }
       else if (t.id === "ref-deep") S.deep = t.checked;
+      else if (t.id === "bv") { switchVersion(t.value); return; }
+      else if (t.id === "cmp") { CMP.mode = t.value; CMP.hidden.clear(); }
+      else if (t.id === "cmp-values") CMP.values = t.checked;
+      else if (t.id === "cmp-water") CMP.water = t.checked;
+      else if (t.id === "cmp-bench") CMP.bench = t.checked;
+      else if (t.dataset.col) { t.checked ? S.hide.delete(t.dataset.col) : S.hide.add(t.dataset.col); }
       else return;
       render();
     });
+    matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => renderOverview());
     let rt;
     window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { renderOverview(); renderResults(); }, 150); });
     let qt;
@@ -384,15 +693,66 @@
     });
     $("#results").addEventListener("click", (e) => {
       const id = e.target.dataset?.id;
-      if (id) document.getElementById("row-" + id)?.scrollIntoView({ block: "center", behavior: "smooth" });
+      if (id) document.getElementById("row-" + id)?.scrollIntoView({ block: "center", behavior: smooth() });
     });
   }
 
-  function download() {
-    const rows = current.map((r) => ({ ...r, citation: REFS[r.ref]?.citation || "", doi: REFS[r.ref]?.doi || "" }));
-    const blob = new Blob([toCSV(rows, COLS.concat(["citation", "doi"]))], { type: "text/csv" });
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `tus_properties_${S.tissue}.csv` });
-    a.click(); URL.revokeObjectURL(a.href);
+  // ---------- export: CSV + metadata.json in one zip ----------
+  const COL_INFO = {
+    id: "permanent row identifier", tissue: "target tissue in the simulation", division: "measured sub-tissue", label: "tissue description",
+    property: "property key", value: "value in the canonical unit (attenuation: dB/cm at 0.5 MHz)", value_max: "upper end if the source reports a range",
+    unit: "canonical unit", reported: "value as printed in the source", test_freq_mhz: "test frequency or range (MHz)",
+    exponent_b: "power-law exponent of attenuation", db_cm_1mhz: "attenuation at 1 MHz (dB/cm)", species: "species (;-separated)",
+    preparation: "sample preparation", status: "included / excluded / proposed", ref: "key of the primary source", via: "secondary source the value was taken from",
+    sources: "sources cited by a compilation (;-separated)", notes: "exclusion reason, caveats, conversions",
+    bound: "LOW/HIGH bound this row defines in bound_version", bound_version: "version of the LOW/HIGH bounds", db_version: "database version",
+    citation: "citation of the primary source", doi: "DOI of the primary source",
+  };
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = (b) => { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  // minimal zip (stored, UTF-8 names): enough for a few text files, no dependency
+  function zip(files) {
+    const enc = new TextEncoder(), d = new Date();
+    const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    const parts = [], central = []; let off = 0;
+    files.forEach(([name, text]) => {
+      const nb = enc.encode(name), db = enc.encode(text), crc = crc32(db);
+      const head = (sig, extra) => { const h = new DataView(new ArrayBuffer(extra)); h.setUint32(0, sig, true); return h; };
+      const lh = head(0x04034b50, 30);
+      [[4, 20], [6, 0x0800], [8, 0], [10, time], [12, date]].forEach(([o, v]) => lh.setUint16(o, v, true));
+      lh.setUint32(14, crc, true); lh.setUint32(18, db.length, true); lh.setUint32(22, db.length, true); lh.setUint16(26, nb.length, true);
+      const ch = head(0x02014b50, 46);
+      [[4, 20], [6, 20], [8, 0x0800], [10, 0], [12, time], [14, date]].forEach(([o, v]) => ch.setUint16(o, v, true));
+      ch.setUint32(16, crc, true); ch.setUint32(20, db.length, true); ch.setUint32(24, db.length, true); ch.setUint16(28, nb.length, true); ch.setUint32(42, off, true);
+      parts.push(lh, nb, db); central.push(ch, nb);
+      off += 30 + nb.length + db.length;
+    });
+    const size = central.reduce((a, x) => a + (x.byteLength ?? x.length), 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, size, true); end.setUint32(16, off, true);
+    return new Blob([...parts, ...central, end], { type: "application/zip" });
+  }
+  function download(all) {
+    const src = all ? DATA : current;
+    const v = META.version || "unknown", scope = all ? "all" : S.tissue;
+    const cols = COLS.concat(["bound", "bound_version", "db_version", "citation", "doi"]);
+    const rows = src.map((r) => ({ ...r, db_version: v, bound_version: BV, citation: REFS[r.ref]?.citation || "", doi: REFS[r.ref]?.doi || "" }));
+    const name = `tus-properties_v${v}_${scope}`;
+    const off = Object.fromEntries(FACETS.filter((f) => S.off[f].size).map((f) => [f, [...S.off[f]]]));
+    const meta = {
+      title: META.title || "TUS Tissue Properties", database_version: v, database_date: META.date || "", bounds_version: BV,
+      exported: new Date().toISOString(), source: location.href, rows: rows.length, of_total: DATA.length,
+      selection: all ? "all values" : {
+        tissue: S.tissue, properties: [...S.props], unticked: off, references_excluded: [...S.refsOff],
+        match_indirect_references: S.deep, search: S.q,
+      },
+      bounds: BOUNDS.filter((b) => b.version === BV).map(({ tissue, property, bound, value, id, notes }) => ({ tissue, property, bound, value: +value, id, notes })),
+      columns: Object.fromEntries(cols.map((c) => [c, COL_INFO[c] || ""])),
+      notes: "Attenuation and absorption coefficient: dB/cm at 0.5 MHz, value = db_cm_1mhz * 0.5^exponent_b. Ranges, medians and n on the site use non-excluded values.",
+      licence: "Data CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/); cite the original sources and this compilation.",
+      citation: ($(".site-footer .cite")?.textContent || "").replace(/\s+/g, " ").trim(),
+    };
+    saveBlob(zip([[`${name}/${name}.csv`, toCSV(rows, cols) + "\n"], [`${name}/${name}_metadata.json`, JSON.stringify(meta, null, 2) + "\n"]]), `${name}.zip`);
   }
 
   // ---------- theme: system -> light -> dark ----------
@@ -404,6 +764,7 @@
     if (next === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = next;
     try { next === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", next); } catch (e) { /* storage unavailable */ }
     showTheme();
+    renderOverview();
   }
 
   // ---------- boot ----------
@@ -416,12 +777,33 @@
     if (CFG.repo && CFG.repo !== "#") {
       $("#repo-link").href = CFG.repo;
       $("#contrib-link").href = `${CFG.repo}/blob/${CFG.branch}/${CFG.dir || ""}CONTRIBUTING.md`;
-    } else { $("#repo-link").remove(); $("#contrib-link").href = "CONTRIBUTING.md"; }
-    const [m, r] = await Promise.all(["data/measurements.csv", "data/references.csv"].map((u) => fetch(u, { cache: "no-cache" }).then((x) => x.text())));
-    DATA = parseCSV(m); COLS = Object.keys(DATA[0]).filter((k) => k !== "_line");
-    REFS = Object.fromEntries(parseCSV(r).map((x) => [x.key, x]));
+      $(".vbadge").href = `${CFG.repo}/blob/${CFG.branch}/${CFG.dir || ""}CHANGELOG.md`;
+      $("#release-link").href = `${CFG.repo}/releases/latest`;
+    } else { $("#repo-link").remove(); $("#release-link").remove(); $("#contrib-link").href = "CONTRIBUTING.md"; }
+    try { const vr = await fetch("data/versions.json", { cache: "no-cache" }); if (vr.ok) ({ current: CURRENT, versions: VERSIONS } = await vr.json()); } catch (e) { /* local preview: current data only */ }
+    const want = new URLSearchParams(location.hash.slice(1)).get("v");
+    await loadVersion(want && VERSIONS.some((x) => x.version === want) ? want : CURRENT);
+    if (giscusOn()) {
+      try { const c = await fetch("data/comments.json", { cache: "no-cache" }); if (c.ok) COMMENTS = await c.json(); } catch (e) { /* counts are optional */ }
+    }
     S = readHash();
     bind(); render();
+  }
+  // data of one database version: current files, or the snapshot under versions/X.Y.Z/ (built from git tags)
+  async function loadVersion(v) {
+    const base = VERSIONS.find((x) => x.version === v)?.path || "";
+    const get = (f, optional) => fetch(base + "data/" + f, { cache: "no-cache" }).then((x) => (x.ok ? x.text() : optional ? "" : Promise.reject(new Error(`${base}data/${f}: ${x.status}`))));
+    const [m, r, bc, mj] = await Promise.all([get("measurements.csv"), get("references.csv"), get("bounds.csv", true), get("meta.json")]);
+    META = JSON.parse(mj); if (!CURRENT) CURRENT = META.version;
+    BOUNDS = bc ? parseCSV(bc) : []; BV = META.version;
+    DATA = parseCSV(m); COLS = Object.keys(DATA[0]).filter((k) => k !== "_line");
+    REFS = Object.fromEntries(parseCSV(r).map((x) => [x.key, x]));
+    document.querySelectorAll("[data-version]").forEach((el) => (el.textContent = `v${META.version}`));
+    document.querySelectorAll("[data-version-date]").forEach((el) => (el.textContent = META.date));
+  }
+  async function switchVersion(v) {
+    try { await loadVersion(v); } catch (e) { alert(`Could not load v${v}: ${e.message}`); return renderVersion(); }
+    openThread = ""; render();
   }
   boot().catch((e) => { $("#results").innerHTML = `<div class="empty">Could not load data: ${esc(e.message)}</div>`; });
 })();
