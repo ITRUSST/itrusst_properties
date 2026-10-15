@@ -1,0 +1,57 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    # a new tag adds a version snapshot (path filters are not applied to tag pushes)
+    tags: ["v*.*.*"]
+    paths: ["literature_web/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+  # refresh per-value comment counts when a giscus thread changes
+  discussion:
+    types: [created, deleted]
+  discussion_comment:
+    types: [created, deleted]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  discussions: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # all tags, for the version snapshots
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate before publishing
+        run: python literature_web/scripts/validate.py
+      - name: Assemble site
+        working-directory: literature_web
+        run: |
+          mkdir -p ../_site
+          cp -r index.html .nojekyll assets data CONTRIBUTING.md CHANGELOG.md LICENSE ../_site/
+      - name: Snapshot released versions (git tags)
+        run: python literature_web/scripts/build_versions.py _site
+      - name: Comment counts for giscus threads
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python literature_web/scripts/discussion_counts.py _site/data/comments.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

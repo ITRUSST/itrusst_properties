@@ -1,0 +1,25 @@
+name: Correct a value
+description: Report a wrong value, unit, category or citation (no git needed)
+title: "Correction: "
+labels: [correction]
+body:
+  - type: input
+    id: row_id
+    attributes:
+      label: Row ID
+      description: Shown under each row label on the site, e.g. skull-att-008
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong and what should it be?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Table / figure / page in the source; DOI
+    validations:
+      required: true

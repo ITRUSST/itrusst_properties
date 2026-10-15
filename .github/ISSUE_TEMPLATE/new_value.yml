@@ -1,0 +1,39 @@
+name: Propose a new value
+description: Suggest a literature value that is missing (maintainers will add it)
+title: "New value: "
+labels: [new-value]
+body:
+  - type: dropdown
+    id: tissue
+    attributes:
+      label: Tissue
+      options: [skull, brain, water]
+    validations:
+      required: true
+  - type: dropdown
+    id: property
+    attributes:
+      label: Property
+      options: [sound_speed, density, attenuation, thermal_conductivity, specific_heat, perfusion, absorption_fraction, absorption_coefficient]
+    validations:
+      required: true
+  - type: input
+    id: value
+    attributes:
+      label: Value as printed in the source (with unit)
+    validations:
+      required: true
+  - type: input
+    id: details
+    attributes:
+      label: Division, species, preparation, test frequency, temperature
+  - type: input
+    id: doi
+    attributes:
+      label: DOI or full citation
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Table / figure / page
