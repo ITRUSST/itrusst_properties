@@ -1,0 +1,50 @@
+version,tissue,property,bound,value,id,notes
+0.1.0,skull,sound_speed,low,2190,skull-c-001,
+0.1.0,skull,sound_speed,high,2871,skull-c-012,
+0.1.0,skull,sound_speed,reference,2550,,reference benchmark (Table 1)
+0.1.0,skull,density,low,1080,skull-rho-001,
+0.1.0,skull,density,high,1991,skull-rho-009,
+0.1.0,skull,density,reference,1775,,reference benchmark (Table 1)
+0.1.0,skull,attenuation,low,3.22,skull-att-003,
+0.1.0,skull,attenuation,high,11.7,skull-att-013,
+0.1.0,skull,attenuation,reference,6,,reference benchmark (Table 1)
+0.1.0,skull,thermal_conductivity,low,0.3,skull-k-003,
+0.1.0,skull,thermal_conductivity,high,0.36,skull-k-009,
+0.1.0,skull,thermal_conductivity,reference,0.315,,reference benchmark (Table 1)
+0.1.0,skull,specific_heat,low,826,skull-cp-001,
+0.1.0,skull,specific_heat,high,2524,skull-cp-012,
+0.1.0,skull,specific_heat,reference,1793,,reference benchmark (Table 1)
+0.1.0,skull,perfusion,low,0,skull-w-001,
+0.1.0,skull,perfusion,high,30,skull-w-004,
+0.1.0,skull,perfusion,reference,20,,reference benchmark (Table 1)
+0.1.0,skull,absorption_fraction,low,0.16,skull-abs-001,
+0.1.0,skull,absorption_fraction,high,1,,conservative assumption: all attenuation absorbed (no literature value reaches 1)
+0.1.0,skull,absorption_fraction,reference,0.58,,reference benchmark (Table 1)
+0.1.0,brain,sound_speed,low,1520,brain-c-002,
+0.1.0,brain,sound_speed,high,1568,brain-c-008,
+0.1.0,brain,sound_speed,reference,1560,,reference benchmark (Table 1)
+0.1.0,brain,density,low,1040,brain-rho-001,
+0.1.0,brain,density,high,1050,brain-rho-007,
+0.1.0,brain,density,reference,1040,,reference benchmark (Table 1)
+0.1.0,brain,attenuation,low,0.236,brain-att-004,
+0.1.0,brain,attenuation,high,0.493,brain-att-014,
+0.1.0,brain,attenuation,reference,0.3,,reference benchmark (Table 1)
+0.1.0,brain,thermal_conductivity,low,0.48,brain-k-001,Table 1 rounds 0.481
+0.1.0,brain,thermal_conductivity,high,0.55,brain-k-003,Table 1 rounds 0.547
+0.1.0,brain,thermal_conductivity,reference,0.51,,reference benchmark (Table 1)
+0.1.0,brain,specific_heat,low,3525,brain-cp-001,
+0.1.0,brain,specific_heat,high,3718,brain-cp-009,
+0.1.0,brain,specific_heat,reference,3630,,reference benchmark (Table 1)
+0.1.0,brain,perfusion,low,196,brain-w-001,
+0.1.0,brain,perfusion,high,809,brain-w-017,
+0.1.0,brain,perfusion,reference,559,,reference benchmark (Table 1)
+0.1.0,brain,absorption_fraction,low,0.73,brain-abs-001,
+0.1.0,brain,absorption_fraction,high,1,,conservative assumption: all attenuation absorbed; highest tabulated value 0.94 (brain-abs-003)
+0.1.0,brain,absorption_fraction,reference,0.865,,reference benchmark (Table 1)
+0.1.0,water,sound_speed,uniform,1482,water-c-001,
+0.1.0,water,density,uniform,994,water-rho-001,
+0.1.0,water,attenuation,uniform,0.00055,water-att-002,
+0.1.0,water,thermal_conductivity,uniform,0.6,water-k-001,
+0.1.0,water,specific_heat,uniform,4178,water-cp-001,
+0.1.0,water,perfusion,uniform,0,water-w-001,
+0.1.0,water,absorption_fraction,uniform,1,water-abs-001,

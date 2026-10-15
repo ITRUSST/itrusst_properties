@@ -11,17 +11,17 @@ skull-c-009,skull,whole,Skull (whole),sound_speed,2609,,m/s,2609 m/s,0.5,,,human
 skull-c-010,skull,whole,Skull (whole),sound_speed,2740,,m/s,2740 m/s,0.3–0.8,,,human,ex vivo,included,fry1978,,,
 skull-c-011,skull,whole,Skull (whole),sound_speed,2820,,m/s,2820 m/s,1,,,human,ex vivo,included,white2006,,,
 skull-c-012,skull,frontal,Skull (frontal),sound_speed,2871,,m/s,2871 m/s,0.5,,,human,ex vivo,included,riis2022,,,
-skull-rho-001,skull,cancellous,"Skull (cancellous; human vertebrae/calcaneus, marrow intact)",density,1080,,kg/m3,1080 kg/m3,,,,human,ex vivo,included,blanton1968,hasgall2022,,
-skull-rho-002,skull,cancellous,Skull (cancellous; human),density,1105,,kg/m3,1105 kg/m3,,,,human,ex vivo,included,clauser1969,hasgall2022,,
-skull-rho-003,skull,cancellous,Skull (cancellous; dog),density,1350,,kg/m3,1350 kg/m3,,,,dog,ex vivo,included,robinson1958,hasgall2022,,
-skull-rho-004,skull,cortical,Skull (cortical; human),density,1800,,kg/m3,1800 kg/m3,,,,human,ex vivo,included,clauser1969,hasgall2022,,
-skull-rho-005,skull,cortical,Skull (cortical; dog),density,1800,,kg/m3,1800 kg/m3,,,,dog,ex vivo,included,robinson1958,hasgall2022,,
+skull-rho-001,skull,cancellous,"Skull (cancellous; vertebrae/calcaneus, marrow intact)",density,1080,,kg/m3,1080 kg/m3,,,,human,ex vivo,included,blanton1968,hasgall2022,,
+skull-rho-002,skull,cancellous,Skull (cancellous),density,1105,,kg/m3,1105 kg/m3,,,,human,ex vivo,included,clauser1969,hasgall2022,,
+skull-rho-003,skull,cancellous,Skull (cancellous),density,1350,,kg/m3,1350 kg/m3,,,,dog,ex vivo,included,robinson1958,hasgall2022,,
+skull-rho-004,skull,cortical,Skull (cortical),density,1800,,kg/m3,1800 kg/m3,,,,human,ex vivo,included,clauser1969,hasgall2022,,
+skull-rho-005,skull,cortical,Skull (cortical),density,1800,,kg/m3,1800 kg/m3,,,,dog,ex vivo,included,robinson1958,hasgall2022,,
 skull-rho-006,skull,whole,Skull (whole),density,1840,,kg/m3,1840 kg/m3,,,,human,ex vivo,included,fry1978,,,
-skull-rho-007,skull,cortical,Skull (cortical; human tibia/femur/humerus),density,1850,,kg/m3,1850 kg/m3,,,,human,ex vivo,included,blanton1968,hasgall2022,,
+skull-rho-007,skull,cortical,Skull (cortical; tibia/femur/humerus),density,1850,,kg/m3,1850 kg/m3,,,,human,ex vivo,included,blanton1968,hasgall2022,,
 skull-rho-008,skull,whole,Skull (whole),density,1904,,kg/m3,1904 kg/m3,,,,human,ex vivo,included,pichardo2011,,,
-skull-rho-009,skull,cortical,"Skull (cortical; human femur/tibia, marrow-free)",density,1991,,kg/m3,1991 kg/m3,,,,human,ex vivo,included,gong1964,hasgall2022,,
-skull-rho-010,skull,cortical,Skull (cortical; unspecified),density,2100,,kg/m3,2100 kg/m3,,,,unspecified,ex vivo,excluded,henschel1943,hasgall2022,,side-check on fresh cortical bone (species/site unspecified) in a dentin study; not skull
-skull-att-001,skull,cancellous,Skull (cancellous),attenuation,1.78,,dB/cm @0.5 MHz,47 Np/m/MHz,1,1.2,4.08,unspecified,compilation,excluded,hasgall2022,,elbrawany2009,IT'IS value derived from porcine bone (El-Brawany 2009); no human skull measurement
+skull-rho-009,skull,cortical,"Skull (cortical; femur/tibia, marrow-free)",density,1991,,kg/m3,1991 kg/m3,,,,human,ex vivo,included,gong1964,hasgall2022,,
+skull-rho-010,skull,cortical,Skull (cortical; unspecified),density,2100,,kg/m3,2100 kg/m3,,,,unspecified,ex vivo,excluded,henschel1943,hasgall2022,,"single validation measurement on fresh cortical bone of unspecified species and site, reported to one decimal (specific gravity 2.1), within a dentin-heating study (Henschel 1943, p. 325); not used for bounds"
+skull-att-001,skull,cancellous,Skull (cancellous),attenuation,1.78,,dB/cm @0.5 MHz,47 Np/m/MHz,1,1.2,4.08,unspecified,compilation,excluded,hasgall2022,,elbrawany2009,"IT'IS value based on El-Brawany et al. (2009): porcine bone, n = 4, bone type not specified, 5 MHz broadband pulse-echo at 37 °C; the paper reports b = 1.37 (IT'IS lists 1.2)"
 skull-att-002,skull,cortical,Skull (cortical),attenuation,2.37,,dB/cm @0.5 MHz,54.553 Np/m/MHz,1,1,4.74,unspecified,compilation,excluded,hasgall2022,,goss1980;hosokawa1997,IT'IS value derived from bovine femur (Hosokawa & Otani 1997) and Goss 1980; no human skull measurement
 skull-att-003,skull,whole,Skull (whole),attenuation,3.22,,dB/cm @0.5 MHz,53 Np/m,0.548,1.46,8.87,human,ex vivo,included,white2006,,,
 skull-att-004,skull,whole,Skull (whole),attenuation,5.14,,dB/cm @0.5 MHz,16.6 dB/cm,1,1.69,16.6,human,ex vivo,included,pinton2012,,,
@@ -33,89 +33,89 @@ skull-att-009,skull,temporal,Skull (temporal),attenuation,9.35,,dB/cm @0.5 MHz,1
 skull-att-010,skull,cortical (inner table),Skull (inner table),attenuation,10.01,,dB/cm @0.5 MHz,2.15 Np/cm,1,0.9,18.67,human,ex vivo,included,fry1978,,,
 skull-att-011,skull,cortical (inner table),Skull (inner table),attenuation,10.2,,dB/cm @0.5 MHz,2.9 Np/cm,1,1.3,25.2,human,ex vivo,included,webb2021,,,
 skull-att-012,skull,diploë,Skull (diploë),attenuation,10.4,,dB/cm @0.5 MHz,1.2 Np/cm,0.5,1.3,25.7,human,ex vivo,included,webb2021,,,
-skull-att-013,skull,diploë,Skull (diploë),attenuation,11.7,,dB/cm @0.5 MHz,3.65 Np/cm,1,1.45,32.01,human,ex vivo,included,fry1978,,,
-skull-att-014,skull,whole,Skull (whole),attenuation,11.7,,dB/cm @0.5 MHz,2.48 Np/cm,1,1,23.4,human,ex vivo,included,fry1978,,,
-skull-att-015,skull,whole,Skull (whole),attenuation,15.29,,dB/cm @0.5 MHz,176 Np/m,0.5,1,30.57,human,ex vivo,excluded,riis2022,,,"insertion loss, only partially corrected for reflection; not comparable to attenuation"
-skull-att-016,skull,whole,Skull (whole),attenuation,18.07,,dB/cm @0.5 MHz,208 Np/m,0.5,1,36.13,human,ex vivo,excluded,riis2022,,,"insertion loss, only partially corrected for reflection; not comparable to attenuation"
-skull-att-017,skull,whole,Skull (whole),attenuation,42.47,,dB/cm @0.5 MHz,489 Np/m,0.5,1,84.95,human,ex vivo,excluded,riis2022,,,"insertion loss, only partially corrected for reflection; not comparable to attenuation"
-skull-k-001,skull,cancellous,Skull (cancellous; cow femur),thermal_conductivity,0.287,,W/m/K,0.287 W/m/K,,,,cow,ex vivo,included,clattenburg1975,,,
-skull-k-002,skull,cancellous,Skull (cancellous; cow femur),thermal_conductivity,0.29,,W/m/K,0.290 W/m/K,,,,cow,compilation,included,mcintosh2010,,,
-skull-k-003,skull,cortical,Skull (cortical; human femur),thermal_conductivity,0.3,,W/m/K,0.300 W/m/K,,,,human,compilation,included,mcintosh2010,,,
-skull-k-004,skull,cortical,Skull (cortical; pig & sheep),thermal_conductivity,0.3,,W/m/K,0.300 W/m/K,,,,pig; sheep,compilation,included,mcintosh2010,,,
-skull-k-005,skull,cancellous,Skull (cancellous; human femur),thermal_conductivity,0.3,,W/m/K,0.300 W/m/K,,,,human,compilation,included,mcintosh2010,,,
+skull-att-013,skull,diploë,Skull (diploë),attenuation,11.70,,dB/cm @0.5 MHz,3.68 Np/cm,1,1.45,31.98,human,ex vivo,included,fry1978,,,"digitised from Fig. 10 of Fry & Barger (1978), diploë of skull samples No. 6 and No. 8"
+skull-att-014,skull,whole,Skull (whole),attenuation,10.77,,dB/cm @0.5 MHz,2.48 Np/cm,1,1,21.54,human,ex vivo,included,fry1978,,,"digitised from Fig. 11 of Fry & Barger (1978), full skull No. 8"
+skull-att-015,skull,whole,Skull (whole),attenuation,15.29,,dB/cm @0.5 MHz,176 Np/m,0.5,1,30.57,human,ex vivo,excluded,riis2022,,,"excluded: single-term model T = R·exp(−αh) with the reflection loss R fitted as a free intercept, assuming constant reflection and composition across thickness; phase cancellation at the large unfocused receiver (28.5 mm) not corrected; coefficients vary almost three-fold across the three skulls; authors call the model ""likely simplistic"""
+skull-att-016,skull,whole,Skull (whole),attenuation,18.07,,dB/cm @0.5 MHz,208 Np/m,0.5,1,36.13,human,ex vivo,excluded,riis2022,,,"excluded: single-term model T = R·exp(−αh) with the reflection loss R fitted as a free intercept, assuming constant reflection and composition across thickness; phase cancellation at the large unfocused receiver (28.5 mm) not corrected; coefficients vary almost three-fold across the three skulls; authors call the model ""likely simplistic"""
+skull-att-017,skull,whole,Skull (whole),attenuation,42.47,,dB/cm @0.5 MHz,489 Np/m,0.5,1,84.95,human,ex vivo,excluded,riis2022,,,"excluded: single-term model T = R·exp(−αh) with the reflection loss R fitted as a free intercept, assuming constant reflection and composition across thickness; phase cancellation at the large unfocused receiver (28.5 mm) not corrected; coefficients vary almost three-fold across the three skulls; authors call the model ""likely simplistic"""
+skull-k-001,skull,cancellous,Skull (cancellous; femur),thermal_conductivity,0.287,,W/m/K,0.287 W/m/K,,,,cow,ex vivo,excluded,clattenburg1975,,,"bovine femur (non-human, non-cranial)"
+skull-k-002,skull,cancellous,Skull (cancellous; femur),thermal_conductivity,0.29,,W/m/K,0.290 W/m/K,,,,cow,compilation,excluded,mcintosh2010,,,"bovine femur (non-human, non-cranial)"
+skull-k-003,skull,cortical,Skull (cortical; femur),thermal_conductivity,0.3,,W/m/K,0.300 W/m/K,,,,human,compilation,included,mcintosh2010,,,
+skull-k-004,skull,cortical,Skull (cortical),thermal_conductivity,0.3,,W/m/K,0.300 W/m/K,,,,pig; sheep,compilation,included,mcintosh2010,,,
+skull-k-005,skull,cancellous,Skull (cancellous; femur),thermal_conductivity,0.3,,W/m/K,0.300 W/m/K,,,,human,compilation,included,mcintosh2010,,,
 skull-k-006,skull,cancellous,Skull (cancellous),thermal_conductivity,0.31,,W/m/K,0.31 W/m/K,,,,unspecified,compilation,included,hasgall2022,,collins2004;mcintosh2010,
 skull-k-007,skull,cortical,Skull (cortical),thermal_conductivity,0.32,,W/m/K,0.32 W/m/K,,,,unspecified,compilation,included,hasgall2022,,clattenburg1975;collins2004;mcintosh2010,
 skull-k-008,skull,cortical,Skull (cortical),thermal_conductivity,0.36,,W/m/K,0.36 W/m/K,,,,unspecified,compilation,included,collins2004,,,
 skull-k-009,skull,cancellous,Skull (cancellous),thermal_conductivity,0.36,,W/m/K,0.36 W/m/K,,,,unspecified,compilation,included,collins2004,,,
-skull-cp-001,skull,cortical,"Skull (cortical, min; pig & sheep)",specific_heat,826,,J/kg/K,826 J/kg/K,,,,pig; sheep,compilation,included,mcintosh2010,,,
-skull-cp-002,skull,cortical,Skull (cortical; human),specific_heat,1255,,J/kg/K,1255 J/kg/K,,,,human,compilation,included,mcintosh2010,,,
-skull-cp-003,skull,cortical,Skull (cortical; human),specific_heat,1300,,J/kg/K,1300 J/kg/K,,,,human,compilation,included,duck1990,,,
+skull-cp-001,skull,cortical,"Skull (cortical, min)",specific_heat,826,,J/kg/K,826 J/kg/K,,,,pig; sheep,compilation,included,mcintosh2010,,,
+skull-cp-002,skull,cortical,Skull (cortical),specific_heat,1255,,J/kg/K,1255 J/kg/K,,,,human,compilation,included,mcintosh2010,,,
+skull-cp-003,skull,cortical,Skull (cortical),specific_heat,1300,,J/kg/K,1300 J/kg/K,,,,human,compilation,included,duck1990,,,
 skull-cp-004,skull,cortical,Skull (cortical),specific_heat,1300,,J/kg/K,1300 J/kg/K,,,,unspecified,compilation,included,collins2004,,,
 skull-cp-005,skull,cortical,Skull (cortical),specific_heat,1313,,J/kg/K,1313 J/kg/K,,,,unspecified,compilation,included,hasgall2022,,collins2004;duck1990;mcintosh2010,
-skull-cp-006,skull,cortical,Skull (cortical; cow),specific_heat,1330,,J/kg/K,1330 J/kg/K,,,,cow,compilation,included,duck1990,,,
-skull-cp-007,skull,cortical,Skull (cortical; pig),specific_heat,1360,,J/kg/K,1360 J/kg/K,,,,pig,compilation,included,duck1990,,,
-skull-cp-008,skull,cortical,Skull (cortical; human femur),specific_heat,1650,,J/kg/K,1650 J/kg/K,,,,human,compilation,included,mcintosh2010,,,
-skull-cp-009,skull,cancellous,Skull (cancellous; human femur),specific_heat,2060,,J/kg/K,2060 J/kg/K,,,,human,compilation,included,mcintosh2010,,,
+skull-cp-006,skull,cortical,Skull (cortical),specific_heat,1330,,J/kg/K,1330 J/kg/K,,,,cow,compilation,included,duck1990,,,
+skull-cp-007,skull,cortical,Skull (cortical),specific_heat,1360,,J/kg/K,1360 J/kg/K,,,,pig,compilation,included,duck1990,,,
+skull-cp-008,skull,cortical,Skull (cortical; femur),specific_heat,1650,,J/kg/K,1650 J/kg/K,,,,human,compilation,included,mcintosh2010,,,
+skull-cp-009,skull,cancellous,Skull (cancellous; femur),specific_heat,2060,,J/kg/K,2060 J/kg/K,,,,human,compilation,included,mcintosh2010,,,
 skull-cp-010,skull,cancellous,Skull (cancellous),specific_heat,2238,,J/kg/K,2238 J/kg/K,,,,unspecified,compilation,included,collins2004,,,
 skull-cp-011,skull,cancellous,Skull (cancellous),specific_heat,2274,,J/kg/K,2274 J/kg/K,,,,unspecified,compilation,included,hasgall2022,,collins2004;mcintosh2010,
-skull-cp-012,skull,cancellous,"Skull (cancellous, max; cow femur)",specific_heat,2524,,J/kg/K,2524 J/kg/K,,,,cow,compilation,included,mcintosh2010,,,
+skull-cp-012,skull,cancellous,"Skull (cancellous, max; femur)",specific_heat,2524,,J/kg/K,2524 J/kg/K,,,,cow,compilation,included,mcintosh2010,,,
 skull-w-001,skull,cortical,Skull (cortical),perfusion,0,,mL/min/kg,0 mL/min/kg,,,,unspecified,compilation,included,mcintosh2010,,,
 skull-w-002,skull,cancellous,Skull (cancellous),perfusion,12,,mL/min/kg,12 mL/min/kg,,,,unspecified,compilation,included,mcintosh2010,,,
 skull-w-003,skull,cortical,Skull (cortical),perfusion,14,,mL/min/kg,14 mL/min/kg,,,,unspecified,compilation,included,collins2004,,,
 skull-w-004,skull,cancellous,Skull (cancellous),perfusion,30,,mL/min/kg,30 mL/min/kg,,,,unspecified,compilation,included,collins2004,,,
 skull-abs-001,skull,whole,"Skull (whole, longitudinal wave)",absorption_fraction,0.16,,fraction,2.7 dB/cm / 16.6 dB/cm @ 1 MHz,1,,,human,ex vivo,included,pinton2012,,,
-skull-abs-002,skull,cortical,Skull (cortical tables),absorption_fraction,0.08,0.19,fraction,2.1–2.8 dB/cm / 14.5–25.2 dB/cm @ 1 MHz,1,,,human,ex vivo,included,white1978,,,
-brain-c-001,brain,gray matter,Brain (gray matter),sound_speed,1500,,m/s,1500 m/s,,,,unspecified,compilation,included,hasgall2022,,,noted as arbitrary
-brain-c-002,brain,gray matter,Brain (gray matter; sheep),sound_speed,1520,,m/s,1520 m/s,,,,sheep,fixed,included,labuda2022,,,
-brain-c-003,brain,whole brain,"Brain (human, 22 °C)",sound_speed,1532,,m/s,1532 m/s,,,,human,compilation,included,duck1990,,,
+skull-abs-002,skull,cortical,Skull (cortical tables),absorption_fraction,0.08,0.19,fraction,2.1–2.8 dB/cm / 14.5–25.2 dB/cm @ 1 MHz,1,,,cow; human,ex vivo,included,white1978,,fry1978;webb2021,"ratio across studies: absorption 2.1–2.8 dB/cm @ 1 MHz in formalin-stored bovine compact bone (White 1978) over reflection-corrected attenuation of human outer/inner tables, 14.5 and 18.7 dB/cm (Fry & Barger 1978; fraction 0.11–0.19) and 20.0 and 25.2 dB/cm (Webb 2021; fraction 0.08–0.14, a lower bound as Webb attenuation is likely overestimated); assumes human cortical bone absorbs like bovine compact bone; cortical tables only"
+brain-c-001,brain,gray matter,Brain (gray matter),sound_speed,1500,,m/s,1500 m/s,,,,unspecified,compilation,excluded,hasgall2022,,,IT'IS value noted as arbitrary
+brain-c-002,brain,gray matter,Brain (gray matter),sound_speed,1520,,m/s,1520 m/s,,,,sheep,fixed,included,labuda2022,,,
+brain-c-003,brain,whole brain,Brain (22 °C),sound_speed,1532,,m/s,1532 m/s,,,,human,compilation,included,duck1990,,,
 brain-c-004,brain,whole brain,Brain (global),sound_speed,1535,,m/s,1535 m/s,,,,sheep,fixed,included,labuda2022,,,
 brain-c-005,brain,white matter,Brain (white matter),sound_speed,1537,,m/s,1537 m/s,,,,sheep,fixed,included,labuda2022,,,
 brain-c-006,brain,white matter,Brain (white matter),sound_speed,1552.5,,m/s,1552.5 m/s,,,,unspecified,compilation,included,hasgall2022,,duck1990,
 brain-c-007,brain,whole brain,Brain (global),sound_speed,1561,1565,m/s,1561 - 1565 m/s,,,,human,ex vivo,included,kremkau1981,,,
 brain-c-008,brain,white matter,Brain (white matter),sound_speed,1568,,m/s,1568 m/s,,,,human,ex vivo,included,kremkau1981,,,
-brain-c-009,brain,white matter,"Brain (white matter; human, 40 °C)",sound_speed,1573,,m/s,1573 m/s,,,,human,compilation,included,duck1990,,,
-brain-rho-001,brain,white matter,Brain (white matter; human),density,1040,,kg/m3,1040 kg/m3,,,,human,ex vivo,included,cooper1972,,,
+brain-c-009,brain,white matter,Brain (white matter; 40 °C),sound_speed,1573,,m/s,1573 m/s,,,,human,compilation,excluded,duck1990,,,measured at 40 °C
+brain-rho-001,brain,white matter,Brain (white matter),density,1040,,kg/m3,1040 kg/m3,,,,human,ex vivo,included,cooper1972,,,
 brain-rho-002,brain,white matter,Brain (white matter),density,1040,,kg/m3,1040 kg/m3,,,,human,in vivo,included,huang1976,,,
-brain-rho-003,brain,whole brain,Brain (cow),density,1041,,kg/m3,1041 kg/m3,,,,cow,ex vivo,included,poppendiek1967,,,
+brain-rho-003,brain,whole brain,Brain,density,1041,,kg/m3,1041 kg/m3,,,,cow,ex vivo,included,poppendiek1967,,,
 brain-rho-004,brain,white matter,Brain (white matter),density,1041,,kg/m3,1041 kg/m3,,,,unspecified,compilation,included,hasgall2022,,cooper1972;huang1976;danilewsky1863,
 brain-rho-005,brain,gray matter,Brain (gray matter),density,1045,,kg/m3,1045 kg/m3,,,,unspecified,compilation,included,hasgall2022,,cooper1972;danilewsky1863,
 brain-rho-006,brain,whole brain,Brain,density,1046,,kg/m3,1046 kg/m3,,,,unspecified,compilation,included,hasgall2022,,cooper1972;poppendiek1967,
 brain-rho-007,brain,gray matter,Brain (gray matter),density,1050,,kg/m3,1050 kg/m3,,,,human,ex vivo,included,cooper1972,,,
 brain-att-001,brain,gray matter,Brain (gray matter),attenuation,0.047,,dB/cm @0.5 MHz,0.094 dB/cm/MHz,,1,0.094,unspecified,compilation,excluded,hasgall2022,,,no source
-brain-att-002,brain,mixed gray/white,"Brain (cow, white/gray mix; 20–22 °C)",attenuation,0.156,,dB/cm @0.5 MHz,0.35 dB/cm/MHz,1–13,1.17,0.35,cow,ex vivo,excluded,lyons1988,,,bovine tissue
-brain-att-003,brain,whole brain,Brain (human),attenuation,0.206,,dB/cm @0.5 MHz,0.435 dB/cm/MHz,1–5,1.08,0.435,human,compilation,excluded,duck1990,,,Duck 1990 lists Kremkau 1981 entries at ~half the original values; Kremkau originals used instead
-brain-att-004,brain,mixed gray/white,"Brain (human, mixed gray/white)",attenuation,0.236,,dB/cm @0.5 MHz,0.58 dB/cm/MHz,1–6,1.3,0.58,human,ex vivo,included,bamber1981,duck1990,,
-brain-att-005,brain,whole brain,"Brain (cat, in vivo)",attenuation,0.286,0.512,dB/cm @0.5 MHz,2.4–4.3 dB/cm,4.2,1,0.571,cat,in vivo,excluded,robinson1969,duck1990,,"non-human (cat), in vivo; table cites 1972; reference list gives 1969 - check"
-brain-att-006,brain,cerebellum,"Brain (human, cerebellum)",attenuation,0.294,,dB/cm @0.5 MHz,0.512 dB/cm/MHz,0.57–2.9,0.8,0.512,human,unspecified,included,oka1977,duck1990,,
-brain-att-007,brain,whole brain,"Brain (sheep, fixed; lowest spatial mean)",attenuation,0.295,,dB/cm @0.5 MHz,0.59 dB/cm/MHz,3.5–10,1,0.59,sheep,fixed,excluded,labuda2022,,,formalin-fixed sheep brain; fit range 3.5–10 MHz
-brain-att-008,brain,white matter,"Brain (human, white matter)",attenuation,0.373,,dB/cm @0.5 MHz,0.8 dB/cm/MHz,1–6,1.1,0.8,human,ex vivo,included,bamber1981,duck1990,,
-brain-att-009,brain,whole brain,Brain (human adult; summary trend),attenuation,0.392,,dB/cm @0.5 MHz,0.84 dB/cm/MHz,~1–10,1.1,0.84,human,compilation,included,bamber1998,,,
-brain-att-010,brain,gray matter,"Brain (human, gray matter)",attenuation,0.402,,dB/cm @0.5 MHz,0.78 dB/cm/MHz,1–5,0.95,0.78,human,ex vivo,included,kremkau1981,,,
-brain-att-011,brain,whole brain,"Brain (sheep, fixed; highest spatial mean)",attenuation,0.405,,dB/cm @0.5 MHz,0.81 dB/cm/MHz,3.5–10,1,0.81,sheep,fixed,excluded,labuda2022,,,formalin-fixed sheep brain; fit range 3.5–10 MHz
-brain-att-012,brain,whole brain,"Brain (human, all sites)",attenuation,0.412,,dB/cm @0.5 MHz,0.87 dB/cm/MHz,1–5,1.08,0.87,human,ex vivo,included,kremkau1981,,,
-brain-att-013,brain,mixed gray/white,"Brain (human, mixed: basal ganglia)",attenuation,0.467,,dB/cm @0.5 MHz,0.90 dB/cm/MHz,1–5,0.94,0.9,human,ex vivo,included,kremkau1981,,,
-brain-att-014,brain,white matter,"Brain (human, white matter)",attenuation,0.493,,dB/cm @0.5 MHz,1.04 dB/cm/MHz,1–5,1.08,1.04,human,ex vivo,included,kremkau1981,,,
+brain-att-002,brain,mixed gray/white,Brain (white/gray mix; 20–22 °C),attenuation,0.156,,dB/cm @0.5 MHz,0.35 dB/cm/MHz,1–13,1.17,0.35,cow,ex vivo,excluded,lyons1988,,,bovine tissue
+brain-att-003,brain,whole brain,Brain,attenuation,0.206,,dB/cm @0.5 MHz,0.435 dB/cm/MHz,1–5,1.08,0.435,human,compilation,excluded,duck1990,,,Duck 1990 lists Kremkau 1981 entries at ~half the original values; Kremkau originals used instead
+brain-att-004,brain,mixed gray/white,Brain (mixed gray/white),attenuation,0.236,,dB/cm @0.5 MHz,0.58 dB/cm/MHz,1–6,1.3,0.58,human,ex vivo,included,bamber1981,duck1990,,
+brain-att-005,brain,whole brain,Brain (in vivo),attenuation,0.286,0.512,dB/cm @0.5 MHz,2.4–4.3 dB/cm,4.2,1,0.571,cat,in vivo,excluded,robinson1972,duck1990,,"non-human (cat), in vivo"
+brain-att-006,brain,cerebellum,Brain (cerebellum),attenuation,0.294,,dB/cm @0.5 MHz,0.512 dB/cm/MHz,0.57–2.9,0.8,0.512,human,unspecified,included,oka1977,duck1990,,
+brain-att-007,brain,whole brain,Brain (fixed; lowest spatial mean),attenuation,0.295,,dB/cm @0.5 MHz,0.59 dB/cm/MHz,3.5–10,1,0.59,sheep,fixed,included,labuda2022,,,formalin-fixed sheep brain; fit range 3.5–10 MHz
+brain-att-008,brain,white matter,Brain (white matter),attenuation,0.373,,dB/cm @0.5 MHz,0.8 dB/cm/MHz,1–6,1.1,0.8,human,ex vivo,included,bamber1981,duck1990,,
+brain-att-009,brain,whole brain,Brain (adult; summary trend),attenuation,0.392,,dB/cm @0.5 MHz,0.84 dB/cm/MHz,~1–10,1.1,0.84,human,compilation,included,bamber1998,,,
+brain-att-010,brain,gray matter,Brain (gray matter),attenuation,0.402,,dB/cm @0.5 MHz,0.78 dB/cm/MHz,1–5,0.95,0.78,human,ex vivo,included,kremkau1981,,,
+brain-att-011,brain,whole brain,Brain (fixed; highest spatial mean),attenuation,0.405,,dB/cm @0.5 MHz,0.81 dB/cm/MHz,3.5–10,1,0.81,sheep,fixed,included,labuda2022,,,formalin-fixed sheep brain; fit range 3.5–10 MHz
+brain-att-012,brain,whole brain,Brain (all sites),attenuation,0.412,,dB/cm @0.5 MHz,0.87 dB/cm/MHz,1–5,1.08,0.87,human,ex vivo,included,kremkau1981,,,
+brain-att-013,brain,mixed gray/white,Brain (mixed: basal ganglia),attenuation,0.467,,dB/cm @0.5 MHz,0.90 dB/cm/MHz,1–5,0.94,0.9,human,ex vivo,included,kremkau1981,,,
+brain-att-014,brain,white matter,Brain (white matter),attenuation,0.493,,dB/cm @0.5 MHz,1.04 dB/cm/MHz,1–5,1.08,1.04,human,ex vivo,included,kremkau1981,,,
 brain-k-001,brain,white matter,Brain (white matter),thermal_conductivity,0.481,,W/m/K,0.481 W/m/K,,,,unspecified,compilation,included,mcintosh2010,,,
 brain-k-002,brain,whole brain,Brain,thermal_conductivity,0.513,,W/m/K,0.513 W/m/K,,,,unspecified,compilation,included,mcintosh2010,,,
 brain-k-003,brain,gray matter,Brain (gray matter),thermal_conductivity,0.547,,W/m/K,0.547 W/m/K,,,,unspecified,compilation,included,mcintosh2010,,,
 brain-cp-001,brain,white matter,Brain (white matter),specific_heat,3525,,J/kg/K,3525 J/kg/K,,,,unspecified,compilation,included,mcintosh2010,,,
 brain-cp-002,brain,white matter,Brain (white matter),specific_heat,3583,,J/kg/K,3583 J/kg/K,,,,unspecified,compilation,included,hasgall2022,,mcintosh2010;bernardi2003;duck1990,
-brain-cp-003,brain,white matter,Brain (white matter; human),specific_heat,3600,,J/kg/K,3600 J/kg/K,,,,human,compilation,included,duck1990,,,
+brain-cp-003,brain,white matter,Brain (white matter),specific_heat,3600,,J/kg/K,3600 J/kg/K,,,,human,compilation,included,duck1990,,,
 brain-cp-004,brain,white matter,Brain (white matter),specific_heat,3600,,J/kg/K,3600 J/kg/K,,,,unspecified,compilation,included,collins2004,,,
 brain-cp-005,brain,whole brain,Brain,specific_heat,3630,,J/kg/K,3630 J/kg/K,,,,unspecified,compilation,included,hasgall2022,,mcintosh2010;williams1989,
 brain-cp-006,brain,gray matter,Brain (gray matter),specific_heat,3680,,J/kg/K,3680 J/kg/K,,,,unspecified,compilation,included,collins2004,,,
-brain-cp-007,brain,gray matter,Brain (gray matter; human),specific_heat,3680,,J/kg/K,3680 J/kg/K,,,,human,compilation,included,duck1990,,,
+brain-cp-007,brain,gray matter,Brain (gray matter),specific_heat,3680,,J/kg/K,3680 J/kg/K,,,,human,compilation,included,duck1990,,,
 brain-cp-008,brain,gray matter,Brain (gray matter),specific_heat,3696,,J/kg/K,3696 J/kg/K,,,,unspecified,compilation,included,hasgall2022,,mcintosh2010;bernardi2003;duck1990,
 brain-cp-009,brain,gray matter,Brain (gray matter),specific_heat,3718,,J/kg/K,3718 J/kg/K,,,,unspecified,compilation,included,mcintosh2010,,,
 brain-w-001,brain,white matter,Brain (white matter),perfusion,196,,mL/min/kg,196,,,,unspecified,compilation,included,mcintosh2010,,,
 brain-w-002,brain,white matter,Brain (white matter),perfusion,200,,mL/min/kg,200,,,,human,in vivo,included,biagi2007,,,
 brain-w-003,brain,white matter,Brain (white matter),perfusion,230,250,mL/min/kg,230–250,,,,human,in vivo,included,parkes2004,,,
-brain-w-004,brain,white matter,Brain (white matter),perfusion,237,,mL/min/kg,237,,,,unspecified,compilation,included,collins2004,,,
+brain-w-004,brain,white matter,Brain (white matter),perfusion,237,,mL/min/kg,237,,,,unspecified,compilation,included,collins2004,,,Collins et al. (2004) compiled values from the literature without a specific source per value
 brain-w-005,brain,white matter,Brain (white matter),perfusion,320,440,mL/min/kg,320-440,,,,human,in vivo,included,muer2024,,,
 brain-w-006,brain,whole brain,Brain,perfusion,450,620,mL/min/kg,450-620,,,,human,in vivo,included,muer2024,,,
 brain-w-007,brain,gray matter,Brain (gray matter),perfusion,474,,mL/min/kg,474,,,,human,in vivo,included,petersen2010,,,
 brain-w-008,brain,gray matter,Brain (gray matter),perfusion,477,,mL/min/kg,477,,,,human,in vivo,included,liu2012,,,
-brain-w-009,brain,whole brain,Brain,perfusion,520,,mL/min/kg,520,,,,unspecified,compilation,included,mcintosh2010,,,
+brain-w-009,brain,whole brain,Brain,perfusion,520,,mL/min/kg,520,,,,unspecified,compilation,included,mcintosh2010,,,mean of the human source values (133Xe clearance and N2O methods); one baboon value excluded
 brain-w-010,brain,whole brain,Brain,perfusion,530,620,mL/min/kg,530-620,,,,human,in vivo,included,parkes2004,,,
 brain-w-011,brain,gray matter,Brain (gray matter),perfusion,540,750,mL/min/kg,540-750,,,,human,in vivo,included,muer2024,,,
 brain-w-012,brain,whole brain,Brain,perfusion,560,,mL/min/kg,560,,,,human,compilation,included,williams1989,,,
@@ -125,12 +125,12 @@ brain-w-015,brain,gray matter,Brain (gray matter),perfusion,610,,mL/min/kg,610,,
 brain-w-016,brain,gray matter,Brain (gray matter),perfusion,671,,mL/min/kg,671,,,,unspecified,compilation,included,collins2004,,,
 brain-w-017,brain,gray matter,Brain (gray matter),perfusion,809,,mL/min/kg,809,,,,unspecified,compilation,included,mcintosh2010,,,
 brain-alpha-001,brain,whole brain,Brain (compiled),absorption_coefficient,0.05,0.14,dB/cm @0.5 MHz,10–28 dB/m,1,1,,unspecified,compilation,included,icru1998,,,exponent assumed
-brain-alpha-002,brain,whole brain,Brain (cat),absorption_coefficient,0.081,,dB/cm @0.5 MHz,0.12 dB/cm,0.7,1.17,,cat,ex vivo,included,goss1979,duck1990,,
+brain-alpha-002,brain,whole brain,Brain,absorption_coefficient,0.081,,dB/cm @0.5 MHz,0.12 dB/cm,0.7,1.17,,cat,ex vivo,included,goss1979,duck1990,,
 brain-alpha-003,brain,whole brain,Brain (diverse),absorption_coefficient,0.093,,dB/cm @0.5 MHz,0.21 dB/cm/MHz,1,1.18,,mixed species,ex vivo,included,goss1979,duck1990,,
-brain-abs-001,brain,proxy: muscle,Dog muscle (37 °C),absorption_fraction,0.73,,fraction,3.2 Np/m/MHz,4,,,dog,ex vivo,included,damianou1997,,,fraction as tabulated: 0.73 [0.85]; exponents: 1 (assumed)
+brain-abs-001,brain,proxy: muscle,Muscle (37 °C),absorption_fraction,0.73,,fraction,3.2 Np/m/MHz,4,,,dog,ex vivo,included,damianou1997,,,fraction 0.73 from the reported values; Chavrier et al. (2000) state ≈ 0.85 from the same data without a derivation (not reproducible; their own simulations assume 1); exponents: 1 (assumed)
 brain-abs-002,brain,proxy: soft tissue,Soft tissue (summary),absorption_fraction,0.85,0.9,fraction,scatter 10–15% of attenuation,low MHz,,,unspecified,compilation,included,duck1990,,,fraction as tabulated: 0.85–0.90
-brain-abs-003,brain,proxy: liver,Liver (calf),absorption_fraction,0.94,,fraction,abs.: 0.030 Np/cm; att.: 0.032 Np/cm,1–13,,,cow,ex vivo,included,lyons1988,,,exponents: abs.: 1.29; att.: 1.30
-brain-abs-004,brain,whole brain,Brain (40–60% white / gray mix) (cow),absorption_fraction,0.77,1.01,fraction,abs.: 0.064 / 0.012 Np/cm (white / gray); att.: 0.040 Np/cm (mix),1–13,,,cow,ex vivo,included,lyons1988,,,fraction as tabulated: 0.77–1.01 (0.89 for 50/50); exponents: abs.: 1.27 / 1.21; att.: 1.17
+brain-abs-003,brain,proxy: liver,Liver,absorption_fraction,0.94,,fraction,abs.: 0.030 Np/cm; att.: 0.032 Np/cm,1–13,,,cow,ex vivo,included,lyons1988,,,calf liver; exponents: abs.: 1.29; att.: 1.30
+brain-abs-004,brain,whole brain,Brain (40–60% white / gray mix),absorption_fraction,0.89,,fraction,abs.: 0.064 / 0.012 Np/cm (white / gray); att.: 0.040 Np/cm (mix),1–13,,,cow,ex vivo,included,lyons1988,,,"absorption 0.119–0.156 dB/cm @0.5 MHz (white / gray), attenuation 0.154 dB/cm @0.5 MHz (mix); fraction 0.89 as in Supp. Table S1 (draft 14.10.26); exponents: abs.: 1.27 / 1.21; att.: 1.17"
 water-c-001,water,water,Water,sound_speed,1482,,m/s,1482 m/s,,,,n/a,reference standard,included,hasgall2022,,kyriakou2015,
 water-rho-001,water,water,Water,density,994,,kg/m3,994 kg/m3,,,,n/a,reference standard,included,hasgall2022,,,
 water-att-001,water,water,Water,attenuation,0.0004775,,dB/cm @0.5 MHz,0.00191 dB/cm/MHz,,2,0.00191,n/a,reference standard,included,kaye1995,,,physical minimum

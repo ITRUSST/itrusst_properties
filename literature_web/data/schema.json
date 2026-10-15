@@ -11,6 +11,8 @@
   "species": ["human", "cow", "pig", "sheep", "dog", "cat", "mixed species", "unspecified", "n/a"],
   "preparation": ["ex vivo", "fixed", "in vivo", "model-derived", "compilation", "reference standard", "unspecified"],
   "status": ["included", "excluded", "proposed"],
+  "bound": ["low", "high", "reference", "uniform"],
+  "bound_tolerance": 0.02,
   "property": {
     "sound_speed":            { "unit": "m/s",            "prefix": "c",     "min": 1000,  "max": 4500 },
     "density":                { "unit": "kg/m3",          "prefix": "rho",   "min": 900,   "max": 2500 },
@@ -18,7 +20,7 @@
     "thermal_conductivity":   { "unit": "W/m/K",          "prefix": "k",     "min": 0.05,  "max": 1.0 },
     "specific_heat":          { "unit": "J/kg/K",         "prefix": "cp",    "min": 300,   "max": 5000 },
     "perfusion":              { "unit": "mL/min/kg",      "prefix": "w",     "min": 0,     "max": 2000 },
-    "absorption_fraction":    { "unit": "fraction",       "prefix": "abs",   "min": 0,     "max": 1.05 },
+    "absorption_fraction":    { "unit": "fraction",       "prefix": "abs",   "min": 0,     "max": 1    },
     "absorption_coefficient": { "unit": "dB/cm @0.5 MHz", "prefix": "alpha", "min": 0,     "max": 100 }
   },
   "attenuation_tolerance": 0.03

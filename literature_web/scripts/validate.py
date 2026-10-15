@@ -155,16 +155,124 @@ for i, vals in enumerate(mrows, start=2):
         if k not in refs:
             E(f"sources key '{k}' missing from references.csv")
 
+    named = [s for s in schema["species"] if s not in ("unspecified", "n/a", "mixed species") and re.search(rf"\b{s}\b", r["label"], re.I)]
+    if named:
+        W(f"label names the species ({', '.join(named)}); it has its own column")
     if r["status"] == "excluded" and not r["notes"]:
         W("excluded without a reason in notes")
     if r["status"] == "proposed" and r["value"] and not r["test_freq_mhz"] and r["property"] in ("sound_speed", "attenuation"):
         W("frequency-dependent property without test_freq_mhz")
 
+# ---------- meta.json (database version) ----------
+rows_by_id = {dict(zip(mhead, v))["id"]: dict(zip(mhead, v)) for v in mrows if len(v) == len(mhead)}
+try:
+    meta = json.loads((DATA / "meta.json").read_text(encoding="utf-8"))
+except (OSError, ValueError) as e:
+    report("error", "meta.json", 1, f"cannot read: {e}")
+    meta = {}
+version = meta.get("version", "")
+semver = lambda v: re.fullmatch(r"\d+\.\d+\.\d+", v or "")
+vkey = lambda v: tuple(int(x) for x in v.split("."))
+if not semver(version):
+    report("error", "meta.json", 1, f"version '{version}' must be MAJOR.MINOR.PATCH")
+if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta.get("date", "")):
+    report("error", "meta.json", 1, "date must be YYYY-MM-DD")
+ref_name = os.environ.get("GITHUB_REF", "")
+if ref_name.startswith("refs/tags/v") and ref_name[len("refs/tags/v"):] != version:
+    report("error", "meta.json", 1, f"git tag {ref_name[10:]} does not match data version {version}")
+
+# ---------- bounds.csv (LOW/HIGH per version) ----------
+bhead, brows = read("bounds.csv")
+if bhead != ["version", "tissue", "property", "bound", "value", "id", "notes"]:
+    report("error", "bounds.csv", 1, "header must be version,tissue,property,bound,value,id,notes")
+else:
+    seen, versions = set(), set()
+    for i, vals in enumerate(brows, start=2):
+        if len(vals) != len(bhead):
+            report("error", "bounds.csv", i, f"expected {len(bhead)} fields, got {len(vals)}")
+            continue
+        b = dict(zip(bhead, vals))
+        E = lambda m: report("error", "bounds.csv", i, m)
+        if not semver(b["version"]):
+            E(f"version '{b['version']}' must be MAJOR.MINOR.PATCH"); continue
+        versions.add(b["version"])
+        if semver(version) and vkey(b["version"]) > vkey(version):
+            E(f"version {b['version']} is newer than data/meta.json ({version})")
+        if b["tissue"] not in schema["tissue"]:
+            E(f"tissue '{b['tissue']}' not in {schema['tissue']}")
+        if b["property"] not in props:
+            E(f"property '{b['property']}' not in vocabulary")
+        if b["bound"] not in schema["bound"]:
+            E(f"bound '{b['bound']}' not in {schema['bound']}")
+        if (b["bound"] == "uniform") != (b["tissue"] == "water"):
+            E("use 'uniform' for water and low/high for other tissues")
+        key = (b["version"], b["tissue"], b["property"], b["bound"])
+        if key in seen:
+            E(f"duplicate bound {key}")
+        seen.add(key)
+        v = num(b["value"])
+        if v is None:
+            E(f"value '{b['value']}' is not numeric"); continue
+        if b["id"]:
+            r = rows_by_id.get(b["id"])
+            if not r:
+                E(f"id '{b['id']}' not in measurements.csv"); continue
+            if (r["tissue"], r["property"]) != (b["tissue"], b["property"]):
+                E(f"id '{b['id']}' is {r['tissue']}/{r['property']}, not {b['tissue']}/{b['property']}")
+            rv = num(r["value_max"] or r["value"]) if b["bound"] == "high" else num(r["value"])
+            if rv is not None and abs(rv - v) > schema["bound_tolerance"] * max(abs(v), 1e-12) and not b["notes"]:
+                report("warning", "bounds.csv", i, f"bound {v:g} differs from {b['id']} ({rv:g}); explain in notes")
+            if r["status"] == "excluded":
+                report("warning", "bounds.csv", i, f"{b['id']} is excluded but defines a bound")
+        elif not b["notes"]:
+            E("bound without a defining row needs a note")
+    # current bounds should enclose every included point value, or say why in notes;
+    # a reported range is not a point estimate: it only has to overlap [LOW, HIGH]
+    cur = {}
+    for vals in brows:
+        if len(vals) == len(bhead):
+            b = dict(zip(bhead, vals))
+            if b["version"] == version and b["bound"] in ("low", "high") and num(b["value"]) is not None:
+                cur[(b["tissue"], b["property"], b["bound"])] = (num(b["value"]), b["notes"], brows.index(vals) + 2)
+    # the reference benchmark sits between LOW and HIGH
+    for vals in brows:
+        if len(vals) == len(bhead):
+            b = dict(zip(bhead, vals))
+            v = num(b["value"])
+            if b["version"] != version or b["bound"] != "reference" or v is None:
+                continue
+            lo, hi = cur.get((b["tissue"], b["property"], "low")), cur.get((b["tissue"], b["property"], "high"))
+            if not (lo and hi) or not (lo[0] <= v <= hi[0]):
+                report("error", "bounds.csv", brows.index(vals) + 2, f"reference {v:g} for {b['tissue']}/{b['property']} needs LOW <= reference <= HIGH in the same version")
+    for r in rows_by_id.values():
+        if r["status"] != "included" or num(r["value"]) is None:
+            continue
+        lo, hi = num(r["value"]), num(r["value_max"]) if r["value_max"] else num(r["value"])
+        if r["value_max"]:
+            lo, hi = hi, lo  # range rows: outside only if the whole range lies beyond a bound
+        for side, x, outside in (("low", lo, lambda x, bv: x < bv), ("high", hi, lambda x, bv: x > bv)):
+            bv = cur.get((r["tissue"], r["property"], side))
+            if bv and outside(x, bv[0]) and not bv[1]:
+                report("warning", "bounds.csv", bv[2], f"{side.upper()} {bv[0]:g} does not enclose included {r['id']} ({x:g}); explain in notes")
+    if semver(version) and version not in versions:
+        report("error", "bounds.csv", 1, f"no bounds for current data version {version} (copy the previous block and update)")
+
+# possible double counting: same value, tissue, division and species, one row's primary source cited by the other
+keys = lambda r: {k for k in [r["ref"], r["via"], *r["sources"].split(";")] if k}
+live = [(i, dict(zip(mhead, v))) for i, v in enumerate(mrows, start=2) if len(v) == len(mhead)]
+live = [(i, r) for i, r in live if r["status"] != "excluded" and r["value"]]
+for n, (i, a) in enumerate(live):
+    for j, b in live[n + 1:]:
+        same = ("tissue", "property", "division", "species", "value", "value_max")
+        if all(a[c] == b[c] for c in same) \
+                and (a["ref"] in keys(b) or b["ref"] in keys(a)) and a["id"] not in b["notes"] and b["id"] not in a["notes"]:
+            report("warning", "measurements.csv", j, f"{b['id']}: same value as {a['id']} from the same primary source; possible double count (exclude one, or name the other id in notes)")
+
 for k, line in refs.items():
     if k not in used:
         report("warning", "references.csv", line, f"'{k}' is not used by any measurement")
 
-summary = f"{len(mrows)} measurements, {len(refs)} references — {len(errors)} error(s), {len(warnings)} warning(s)"
+summary = f"v{version}: {len(mrows)} measurements, {len(refs)} references — {len(errors)} error(s), {len(warnings)} warning(s)"
 print(summary)
 if GHA and os.environ.get("GITHUB_STEP_SUMMARY"):
     with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
