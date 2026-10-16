@@ -2,7 +2,7 @@
 
 Literature values for acoustic and thermal properties of skull, brain and water used in transcranial ultrasound (TUS) simulation, compiled by the [ITRUSST Acoustic Properties Working Group](https://www.itrusst.com/working-group/properties), with a filterable table on GitHub Pages. Corrections and additions from the community are welcome.
 
-- **Site**: https://jkosciessa.github.io/itrusst_acousticproperties/
+- **Site**: https://itrusst.github.io/itrusst_properties/
 - **Data**: [`data/measurements.csv`](data/measurements.csv) (one row per value) and [`data/references.csv`](data/references.csv)
 - **Contribute**: see [CONTRIBUTING.md](CONTRIBUTING.md)
 
@@ -31,7 +31,7 @@ scripts/build_versions.py data snapshots of every tag for the version picker (at
 
 ## Setup
 
-The site lives in `literature_web/` of the `itrusst_acousticproperties` repository; GitHub Actions workflows and issue templates live in `.github/` at the repository root.
+The site lives in `literature_web/` of the `itrusst_properties` repository; GitHub Actions workflows and issue templates live in `.github/` at the repository root.
 
 1. Settings → Pages → Build and deployment → Source: **GitHub Actions**.
 2. Push to `main`; the *Deploy site* workflow validates the data and publishes `literature_web/`.
@@ -45,7 +45,7 @@ The site lives in `literature_web/` of the `itrusst_acousticproperties` reposito
 
 ## Using a version in simulations
 
-Each tagged version is published as a [GitHub Release](https://github.com/jkosciessa/itrusst_acousticproperties/releases) with:
+Each tagged version is published as a [GitHub Release](https://github.com/ITRUSST/itrusst_properties/releases) with:
 
 - `tus-properties_vX.Y.Z_settings.csv` / `.json`: LOW, reference and HIGH value per tissue and property (Table 1 of the manuscript; water: one uniform value). Attenuation in dB/cm at 0.5 MHz.
 - `tus-properties_vX.Y.Z.zip`: the full database at that version (measurements, references, bounds, schema, changelog, licences).

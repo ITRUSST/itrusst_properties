@@ -10,6 +10,6 @@ When reusing the data, cite the original publications listed in `references.csv`
 
 and link the site, e.g.:
 
-> ITRUSST Acoustic Properties Working Group (2026). *TUS Tissue Properties* [data set]. https://jkosciessa.github.io/itrusst_acousticproperties/
+> ITRUSST Acoustic Properties Working Group (2026). *TUS Tissue Properties* [data set]. https://itrusst.github.io/itrusst_properties/
 
 Individual values are facts reported in the cited literature; the licence covers the compilation, curation and annotations.

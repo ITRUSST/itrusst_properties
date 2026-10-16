@@ -1,6 +1,6 @@
 // Edit after creating the GitHub repository.
 window.SITE_CONFIG = {
-  repo: "https://github.com/jkosciessa/itrusst_acousticproperties",
+  repo: "https://github.com/ITRUSST/itrusst_properties",
   // site folder inside the repository (used for "source" links)
   dir: "literature_web/",
   branch: "main",
@@ -9,7 +9,7 @@ window.SITE_CONFIG = {
   // Fill repoId / categoryId from https://giscus.app after making the repo public,
   // enabling Discussions and installing the giscus app. Leave empty to hide threads.
   giscus: {
-    repo: "jkosciessa/itrusst_acousticproperties",
+    repo: "ITRUSST/itrusst_properties",
     repoId: "",
     category: "Value comments",
     categoryId: "",
