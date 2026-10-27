@@ -15,7 +15,7 @@ Two routes:
 | `tissue` | `skull`, `brain`, `water` (target tissue in the simulation) |
 | `division` | measured sub-tissue; vocabulary per tissue in `data/schema.json` |
 | `label` | free-text tissue description as it should appear in the table; leave out the species (it has its own column) |
-| `property` | `sound_speed`, `density`, `attenuation`, `thermal_conductivity`, `specific_heat`, `perfusion`, `absorption_fraction`, `absorption_coefficient` |
+| `property` | `sound_speed`, `density`, `attenuation`, `thermal_conductivity`, `specific_heat`, `perfusion`, `absorption_coefficient` |
 | `value`, `value_max` | number in the canonical unit; `value_max` only for ranges |
 | `unit` | canonical unit (fixed per property, see schema) |
 | `reported` | value **exactly as printed** in the source, with its unit |
@@ -27,7 +27,7 @@ Two routes:
 | `ref` | key of the primary source |
 | `via` | key of the secondary source the value was taken from (e.g. `duck1990`, `hasgall2022`) |
 | `sources` | for compilations: `;`-separated keys of the sources they cite |
-| `notes` | exclusion reason, caveats, conversions |
+| `notes` | exclusion reason, caveats, conversions; cite a reference not in `ref`, `via` or `sources` by its key, e.g. `(chavrier2000)` |
 
 `data/references.csv` — `key,year,citation,doi`. Key = first-author surname (lowercase, letters only) + year, with `a`/`b` suffix if needed. DOI bare (`10.1121/1.381852`).
 

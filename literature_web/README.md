@@ -50,7 +50,7 @@ Each tagged version is published as a [GitHub Release](https://github.com/ITRUSS
 - `tus-properties_vX.Y.Z_settings.csv` / `.json`: LOW, reference and HIGH value per tissue and property (Table 1 of the manuscript; water: one uniform value). Attenuation in dB/cm at 0.5 MHz.
 - `tus-properties_vX.Y.Z.zip`: the full database at that version (measurements, references, bounds, schema, changelog, licences).
 
-Cite the version you used (e.g. "TUS Tissue Properties v0.1.0"). Release files never change; corrections appear as a new version. The site's "Download Database" link opens the latest release.
+Cite the version you used (e.g. "TUS Tissue Properties v0.2.0"). A version with a pre-release label (`-alpha`, `-beta`) is still being checked against the manuscript; its values and bounds may change before the plain version (e.g. v0.1.0). Release files never change; corrections appear as a new version. The site's "Download Database" link opens the latest release.
 
 Build the same files locally with `python3 scripts/build_release.py` (writes `dist/`).
 

@@ -1,6 +1,6 @@
 {
-  "version": "0.1.0",
-  "date": "2026-10-08",
+  "version": "0.2.0",
+  "date": "2026-10-27",
   "title": "TUS Tissue Properties",
-  "description": "Initial release seeded from Supplementary Table S1; LOW/HIGH bounds as used in the simulations of the (in prep.) manuscript."
+  "description": "Literature values and LOW/reference/HIGH bounds synced with Supplementary Table S1 and Table 1 (draft 27.10.26). Absorption is given as absorption coefficient only."
 }
