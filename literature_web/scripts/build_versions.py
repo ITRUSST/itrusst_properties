@@ -25,15 +25,16 @@ def git(*args):
     return subprocess.run(["git", *args], capture_output=True, check=True).stdout
 
 
-def vkey(v):
-    return tuple(int(x) for x in v.split("."))
+def vkey(v):  # a pre-release (X.Y.Z-label) sorts before its release
+    core, _, pre = v.partition("-")
+    return tuple(int(x) for x in core.split(".")) + ((0, pre) if pre else (1, ""))
 
 
 current = json.loads((SITE / "data" / "meta.json").read_text(encoding="utf-8"))
 versions = {current["version"]: {"version": current["version"], "date": current.get("date", ""), "path": ""}}
 
 for tag in git("tag", "--list", "v*").decode().split():
-    if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+    if not re.fullmatch(r"v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?", tag):
         continue
     v = tag[1:]
     try:

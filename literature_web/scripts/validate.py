@@ -154,6 +154,8 @@ for i, vals in enumerate(mrows, start=2):
         used.add(k)
         if k not in refs:
             E(f"sources key '{k}' missing from references.csv")
+    # a reference cited by its key in notes (e.g. a disputed value) counts as used
+    used.update(k for k in refs if re.search(rf"\b{re.escape(k)}\b", r["notes"]))
 
     named = [s for s in schema["species"] if s not in ("unspecified", "n/a", "mixed species") and re.search(rf"\b{s}\b", r["label"], re.I)]
     if named:
@@ -171,10 +173,12 @@ except (OSError, ValueError) as e:
     report("error", "meta.json", 1, f"cannot read: {e}")
     meta = {}
 version = meta.get("version", "")
-semver = lambda v: re.fullmatch(r"\d+\.\d+\.\d+", v or "")
-vkey = lambda v: tuple(int(x) for x in v.split("."))
+semver = lambda v: re.fullmatch(r"\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?", v or "")  # optional pre-release label, e.g. 0.1.0-alpha
+def vkey(v):  # a pre-release sorts before its release
+    core, _, pre = v.partition("-")
+    return tuple(int(x) for x in core.split(".")) + ((0, pre) if pre else (1, ""))
 if not semver(version):
-    report("error", "meta.json", 1, f"version '{version}' must be MAJOR.MINOR.PATCH")
+    report("error", "meta.json", 1, f"version '{version}' must be MAJOR.MINOR.PATCH[-label]")
 if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta.get("date", "")):
     report("error", "meta.json", 1, "date must be YYYY-MM-DD")
 ref_name = os.environ.get("GITHUB_REF", "")
@@ -194,7 +198,7 @@ else:
         b = dict(zip(bhead, vals))
         E = lambda m: report("error", "bounds.csv", i, m)
         if not semver(b["version"]):
-            E(f"version '{b['version']}' must be MAJOR.MINOR.PATCH"); continue
+            E(f"version '{b['version']}' must be MAJOR.MINOR.PATCH[-label]"); continue
         versions.add(b["version"])
         if semver(version) and vkey(b["version"]) > vkey(version):
             E(f"version {b['version']} is newer than data/meta.json ({version})")

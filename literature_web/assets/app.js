@@ -10,7 +10,6 @@
     thermal_conductivity: { name: "Thermal conductivity", unit: "W/m/K" },
     specific_heat: { name: "Specific heat", unit: "J/kg/K" },
     perfusion: { name: "Perfusion", unit: "mL/min/kg" },
-    absorption_fraction: { name: "Absorption fraction", unit: "fraction" },
     absorption_coefficient: { name: "Absorption coefficient", unit: "dB/cm @ 0.5 MHz" },
   };
   const TISSUES = ["skull", "brain", "water"];
@@ -61,7 +60,7 @@
   let VERSIONS = [], CURRENT = ""; // data/versions.json (written at deploy); CURRENT = newest data on the site
 
   // ---------- LOW/HIGH bounds (versioned, data/bounds.csv) ----------
-  const vkey = (v) => v.split(".").map(Number).reduce((a, x) => a * 1000 + x, 0);
+  const vkey = (v) => { const [core, pre] = v.split("-"); return core.split(".").map(Number).reduce((a, x) => a * 1000 + x, 0) * 2 + (pre ? 0 : 1); }; // a pre-release (X.Y.Z-label) sorts before its release
   const boundVersions = () => [...new Set(BOUNDS.map((b) => b.version))].sort((a, b) => vkey(b) - vkey(a));
   let BMAP = {}; // `${tissue}|${property}` -> {low:{...}, high:{...}, uniform:{...}}
   function applyBounds() {
@@ -796,7 +795,7 @@
     const [m, r, bc, mj] = await Promise.all([get("measurements.csv"), get("references.csv"), get("bounds.csv", true), get("meta.json")]);
     META = JSON.parse(mj); if (!CURRENT) CURRENT = META.version;
     BOUNDS = bc ? parseCSV(bc) : []; BV = META.version;
-    DATA = parseCSV(m); COLS = Object.keys(DATA[0]).filter((k) => k !== "_line");
+    DATA = parseCSV(m).filter((r) => r.property in PROPS); COLS = Object.keys(DATA[0]).filter((k) => k !== "_line");
     REFS = Object.fromEntries(parseCSV(r).map((x) => [x.key, x]));
     document.querySelectorAll("[data-version]").forEach((el) => (el.textContent = `v${META.version}`));
     document.querySelectorAll("[data-version-date]").forEach((el) => (el.textContent = META.date));
