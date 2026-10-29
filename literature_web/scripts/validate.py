@@ -112,6 +112,12 @@ for i, vals in enumerate(mrows, start=2):
             E(f"species '{s.strip()}' not in vocabulary; add it to data/schema.json if new")
     if r["preparation"] not in schema["preparation"]:
         E(f"preparation '{r['preparation']}' not in {schema['preparation']}")
+    if r["condition"] not in schema["condition"]:
+        E(f"condition '{r['condition']}' not in {schema['condition']}")
+    elif r["preparation"] == "ex vivo" and r["condition"] == "n/a":
+        E("ex vivo rows need a condition (use 'unspecified' if the source does not state it)")
+    elif r["preparation"] != "ex vivo" and r["condition"] != "n/a":
+        E("condition applies to ex vivo rows only; use 'n/a'")
     if r["status"] not in schema["status"]:
         E(f"status '{r['status']}' not in {schema['status']}")
     if r["unit"] != p["unit"]:
@@ -157,7 +163,7 @@ for i, vals in enumerate(mrows, start=2):
     # a reference cited by its key in notes (e.g. a disputed value) counts as used
     used.update(k for k in refs if re.search(rf"\b{re.escape(k)}\b", r["notes"]))
 
-    named = [s for s in schema["species"] if s not in ("unspecified", "n/a", "mixed species") and re.search(rf"\b{s}\b", r["label"], re.I)]
+    named = [s for s in schema["species"] if s not in ("unspecified", "n/a", "mixed species") and re.search(rf"(?<!non-)\b{s}\b", r["label"], re.I)]
     if named:
         W(f"label names the species ({', '.join(named)}); it has its own column")
     if r["status"] == "excluded" and not r["notes"]:

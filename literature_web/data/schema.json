@@ -1,26 +1,157 @@
 {
   "$comment": "Controlled vocabularies and plausibility bounds used by scripts/validate.py. Extend a vocabulary in the same PR that first uses a new term.",
-  "columns": ["id", "tissue", "division", "label", "property", "value", "value_max", "unit", "reported", "test_freq_mhz", "exponent_b", "db_cm_1mhz", "species", "preparation", "status", "ref", "via", "sources", "notes"],
-  "required": ["id", "tissue", "division", "label", "property", "unit", "reported", "species", "preparation", "status", "ref"],
-  "tissue": ["skull", "brain", "water"],
+  "columns": [
+    "id",
+    "tissue",
+    "division",
+    "label",
+    "property",
+    "value",
+    "value_max",
+    "unit",
+    "reported",
+    "test_freq_mhz",
+    "exponent_b",
+    "db_cm_1mhz",
+    "species",
+    "preparation",
+    "condition",
+    "status",
+    "ref",
+    "via",
+    "sources",
+    "notes"
+  ],
+  "required": [
+    "id",
+    "tissue",
+    "division",
+    "label",
+    "property",
+    "unit",
+    "reported",
+    "species",
+    "preparation",
+    "condition",
+    "status",
+    "ref"
+  ],
+  "tissue": [
+    "skull",
+    "brain",
+    "water"
+  ],
   "division": {
-    "skull": ["whole", "cortical", "cortical (outer table)", "cortical (inner table)", "diploë", "cancellous", "frontal", "parietal", "temporal", "occipital"],
-    "brain": ["whole brain", "gray matter", "white matter", "mixed gray/white", "cerebellum", "proxy: muscle", "proxy: liver", "proxy: soft tissue"],
-    "water": ["water"]
+    "skull": [
+      "whole",
+      "cortical",
+      "cortical (outer table)",
+      "cortical (inner table)",
+      "diploë",
+      "cancellous",
+      "frontal",
+      "parietal",
+      "temporal",
+      "occipital"
+    ],
+    "brain": [
+      "whole brain",
+      "gray matter",
+      "white matter",
+      "mixed gray/white",
+      "cerebellum",
+      "proxy: muscle",
+      "proxy: liver",
+      "proxy: soft tissue"
+    ],
+    "water": [
+      "water"
+    ]
   },
-  "species": ["human", "cow", "pig", "sheep", "dog", "cat", "mixed species", "unspecified", "n/a"],
-  "preparation": ["ex vivo", "fixed", "in vivo", "model-derived", "compilation", "reference standard", "unspecified"],
-  "status": ["included", "excluded", "proposed"],
-  "bound": ["low", "high", "reference", "uniform"],
+  "species": [
+    "human",
+    "cow",
+    "pig",
+    "sheep",
+    "dog",
+    "cat",
+    "mixed species",
+    "unspecified",
+    "n/a"
+  ],
+  "preparation": [
+    "ex vivo",
+    "in vivo",
+    "model-derived",
+    "compilation",
+    "reference standard",
+    "unspecified"
+  ],
+  "condition": [
+    "fresh",
+    "frozen",
+    "fixed",
+    "embalmed",
+    "dried",
+    "mixed",
+    "unspecified",
+    "n/a"
+  ],
+  "status": [
+    "included",
+    "excluded",
+    "proposed"
+  ],
+  "bound": [
+    "low",
+    "high",
+    "reference",
+    "uniform"
+  ],
   "bound_tolerance": 0.02,
   "property": {
-    "sound_speed":            { "unit": "m/s",            "prefix": "c",     "min": 1000,  "max": 4500 },
-    "density":                { "unit": "kg/m3",          "prefix": "rho",   "min": 900,   "max": 2500 },
-    "attenuation":            { "unit": "dB/cm @0.5 MHz", "prefix": "att",   "min": 0,     "max": 100 },
-    "thermal_conductivity":   { "unit": "W/m/K",          "prefix": "k",     "min": 0.05,  "max": 1.0 },
-    "specific_heat":          { "unit": "J/kg/K",         "prefix": "cp",    "min": 300,   "max": 5000 },
-    "perfusion":              { "unit": "mL/min/kg",      "prefix": "w",     "min": 0,     "max": 2000 },
-    "absorption_coefficient": { "unit": "dB/cm @0.5 MHz", "prefix": "alpha", "min": 0,     "max": 100 }
+    "sound_speed": {
+      "unit": "m/s",
+      "prefix": "c",
+      "min": 1000,
+      "max": 4500
+    },
+    "density": {
+      "unit": "kg/m3",
+      "prefix": "rho",
+      "min": 900,
+      "max": 2500
+    },
+    "attenuation": {
+      "unit": "dB/cm @0.5 MHz",
+      "prefix": "att",
+      "min": 0,
+      "max": 100
+    },
+    "thermal_conductivity": {
+      "unit": "W/m/K",
+      "prefix": "k",
+      "min": 0.05,
+      "max": 1.0
+    },
+    "specific_heat": {
+      "unit": "J/kg/K",
+      "prefix": "cp",
+      "min": 300,
+      "max": 5000
+    },
+    "perfusion": {
+      "unit": "mL/min/kg",
+      "prefix": "w",
+      "min": 0,
+      "max": 2000
+    },
+    "absorption_coefficient": {
+      "unit": "dB/cm @0.5 MHz",
+      "prefix": "alpha",
+      "min": 0,
+      "max": 100
+    }
   },
   "attenuation_tolerance": 0.03
 }

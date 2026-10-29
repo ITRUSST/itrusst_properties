@@ -9,9 +9,9 @@ Literature values for acoustic and thermal properties of skull, brain and water 
 ## Features
 
 - Overview of all tissues: range table (skull, brain, water) and parallel-axes chart of skull vs brain ranges with medians; click a cell or axis to drill down (keyboard: Tab, then Enter)
-- Comparison plot with selectable grouping: tissue, skull layer (all / layer unclear / cortical / trabecular), brain region, species, preparation or status (split by tissue); individual literature values, LOW/HIGH bounds, toggleable groups, SVG/PNG export
+- Comparison plot with selectable grouping: tissue, skull layer (all / layer unclear / cortical / trabecular), brain region, species, preparation, condition or status (split by tissue); individual literature values, LOW/HIGH bounds, toggleable groups, SVG/PNG export
 - Light and dark mode (follows the system setting; toggle in the header)
-- Filter by tissue, property, status (excluded values hidden by default), species, division, preparation and reference (optionally matching secondary/underlying sources, e.g. what IT'IS cites)
+- Filter by tissue, property, status (excluded values hidden by default), species, division, preparation, condition and reference (optionally matching secondary/underlying sources, e.g. what IT'IS cites)
 - Per-property strip plot and summary (n, range, median of non-excluded rows; a row reported as a range enters the median at its midpoint)
 - Shareable URLs (filter state in the hash)
 - Downloads ("Download selection"; "Download Table" in the header for all values of the version in view): a zip with the CSV and a metadata JSON (database and bounds version, export time, source URL, filters, bounds, column descriptions, licence, citation); file names carry the version
@@ -50,7 +50,7 @@ Each tagged version is published as a [GitHub Release](https://github.com/ITRUSS
 - `tus-properties_vX.Y.Z_settings.csv` / `.json`: LOW, reference and HIGH value per tissue and property (Table 1 of the manuscript; water: one uniform value). Attenuation in dB/cm at 0.5 MHz.
 - `tus-properties_vX.Y.Z.zip`: the full database at that version (measurements, references, bounds, schema, changelog, licences).
 
-Cite the version you used (e.g. "TUS Tissue Properties v0.2.0"). A version with a pre-release label (`-alpha`, `-beta`) is still being checked against the manuscript; its values and bounds may change before the plain version (e.g. v0.1.0). Release files never change; corrections appear as a new version. The site's "Download Database" link opens the latest release.
+Cite the version you used (e.g. "TUS Tissue Properties v0.1.0"). A version with a pre-release label (`-alpha`, `-beta`) is still being checked against the manuscript; its values and bounds may change before the plain version (e.g. v0.1.0). Release files never change; corrections appear as a new version. The site's "Download Database" link opens the latest release.
 
 Build the same files locally with `python3 scripts/build_release.py` (writes `dist/`).
 

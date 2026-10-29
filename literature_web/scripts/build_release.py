@@ -63,7 +63,7 @@ num = lambda v: None if v == "" else int(float(v)) if float(v).is_integer() else
 settings_json = json.dumps({
     "version": version, "date": meta["date"],
     "note": "Values per tissue and property as in Table 1 of the manuscript; water uses one uniform value (low = reference = high). "
-            "Attenuation and absorption coefficient are in dB/cm at 0.5 MHz; convert with each property's power law for other frequencies.",
+            "Attenuation and absorption are in dB/cm at 0.5 MHz; convert with each property's power law for other frequencies.",
     "tissues": {t: {r["property"]: {"unit": r["unit"], "low": num(r["low"]), "reference": num(r["reference"]), "high": num(r["high"])}
                     for r in rows if r["tissue"] == t} for t in dict.fromkeys(r["tissue"] for r in rows)},
 }, indent=2, ensure_ascii=False) + "\n"

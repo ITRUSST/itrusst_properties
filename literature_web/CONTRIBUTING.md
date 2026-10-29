@@ -22,7 +22,8 @@ Two routes:
 | `test_freq_mhz` | test frequency or range, if reported |
 | `exponent_b`, `db_cm_1mhz` | attenuation only: power-law exponent and value at 1 MHz |
 | `species` | `human`, `cow`, … (`;`-separate several) |
-| `preparation` | `ex vivo`, `fixed`, `in vivo`, `model-derived`, `compilation`, `reference standard` |
+| `preparation` | source of the value: `in vivo`, `ex vivo`, `model-derived`, `compilation`, `reference standard`, `unspecified` |
+| `condition` | tissue state at measurement, ex vivo rows only: `fresh`, `frozen` (frozen–thawed), `fixed` (chemical fixative; name it in `notes`), `embalmed`, `dried` (also when rehydrated or degassed before measurement), `mixed` (several states, values not separated), `unspecified`; all other rows `n/a` |
 | `status` | `included`, `excluded`, `proposed` |
 | `ref` | key of the primary source |
 | `via` | key of the secondary source the value was taken from (e.g. `duck1990`, `hasgall2022`) |
@@ -44,7 +45,7 @@ Two routes:
 1. Bump `version` and `date` in `data/meta.json` (MAJOR: schema, MINOR: new values/bounds, PATCH: corrections).
 2. In `data/bounds.csv`, copy the previous version's block, set the new version and update any LOW/HIGH or reference values or defining `id`s. Never edit an earlier block.
 3. Add an entry to `CHANGELOG.md`.
-4. Merge, then tag: `git tag v0.2.0 && git push --tags`. The *Release database version* workflow checks that the tag matches `meta.json`, builds the bundle (`scripts/build_release.py`) and publishes it as a GitHub Release. The *Deploy site* workflow also runs on the tag and adds the version to the site's version picker.
+4. Merge, then tag: `git tag v0.1.1 && git push --tags`. The *Release database version* workflow checks that the tag matches `meta.json`, builds the bundle (`scripts/build_release.py`) and publishes it as a GitHub Release. The *Deploy site* workflow also runs on the tag and adds the version to the site's version picker.
 
 ## Local preview
 
