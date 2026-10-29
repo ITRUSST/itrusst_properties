@@ -7,17 +7,18 @@
     sound_speed: { name: "Sound speed", unit: "m/s" },
     density: { name: "Density", unit: "kg/m³" },
     attenuation: { name: "Attenuation", unit: "dB/cm @ 0.5 MHz" },
+    absorption_coefficient: { name: "Absorption", unit: "dB/cm @ 0.5 MHz" },
     thermal_conductivity: { name: "Thermal conductivity", unit: "W/m/K" },
     specific_heat: { name: "Specific heat", unit: "J/kg/K" },
     perfusion: { name: "Perfusion", unit: "mL/min/kg" },
-    absorption_coefficient: { name: "Absorption coefficient", unit: "dB/cm @ 0.5 MHz" },
   };
   const TISSUES = ["skull", "brain", "water"];
-  const FACETS = ["status", "bound", "species", "division", "preparation"];
+  const OV_TISSUES = ["water", "brain", "skull"]; // overview table columns, in the chart order
+  const FACETS = ["status", "bound", "species", "division", "preparation", "condition"];
   // optional table columns; Tissue and Value are always shown
   const COLUMNS = [["id", "Row ID"], ["links", "Links (suggest fix, comments)"], ["reported", "Reported value"], ["notes", "Notes"],
-    ["test_freq_mhz", "Test frequency"], ["exponent_b", "Exponent b"], ["db_cm_1mhz", "dB/cm @1 MHz"],
-    ["species", "Species"], ["preparation", "Preparation"], ["status", "Status"], ["bound", "Bound"], ["ref", "Reference"]];
+    ["test_freq_mhz", "Test frequency"], ["exponent_b", "Exponent b"], ["db_cm_1mhz", "Value @1 MHz"],
+    ["species", "Species"], ["preparation", "Preparation"], ["condition", "Condition"], ["status", "Status"], ["bound", "Bound"], ["ref", "Reference"]];
   const COL_DEFAULT_HIDDEN = ["id", "status"];
   const OFF_DEFAULT = { status: ["excluded"] }; // facet values unticked on first load
   const sameSet = (a, b) => a.size === b.length && b.every((x) => a.has(x));
@@ -59,6 +60,67 @@
   let DATA = [], REFS = {}, COLS = [], META = {}, BOUNDS = [], BV = "";
   let VERSIONS = [], CURRENT = ""; // data/versions.json (written at deploy); CURRENT = newest data on the site
 
+  // ---------- display units (data and downloads stay in the canonical unit, the first listed) ----------
+  const NP_PER_DB = Math.LN10 / 20; // 1 dB = 0.1151 Np
+  const ATT_UNITS = { "dB/cm": 1, "dB/m": 100, "Np/cm": NP_PER_DB, "Np/m": 100 * NP_PER_DB };
+  const UNITS = { // factor from the canonical unit
+    sound_speed: { "m/s": 1, "mm/µs": 1e-3 },
+    density: { "kg/m³": 1, "g/cm³": 1e-3 },
+    attenuation: ATT_UNITS,
+    thermal_conductivity: { "W/m/K": 1, "mW/m/K": 1e3 },
+    specific_heat: { "J/kg/K": 1, "J/g/K": 1e-3 },
+    perfusion: { "mL/min/kg": 1, "mL/100 g/min": 0.1 },
+    absorption_coefficient: ATT_UNITS,
+  };
+  const FREQ_PROPS = ["attenuation", "absorption_coefficient"]; // unit label carries the frequency
+  const UNIT_FIELDS = ["value", "value_max", "db_cm_1mhz"];
+  const CANON = Object.fromEntries(Object.entries(UNITS).map(([p, u]) => [p, Object.keys(u)[0]]));
+  let UNIT = { ...CANON };
+  // frequency of attenuation and absorption: literature values scale with their own power law,
+  // value(f) = value(0.5 MHz) * (f / 0.5)^b; bounds and benchmarks are simulation settings and scale
+  // with the simulation exponent y (1 skull and brain, 2 water)
+  const FREQS = [0.2, 0.25, 0.3, 0.4, 0.5, 0.65, 0.75, 1, 1.5, 2];
+  const SIM_Y = { skull: 1, brain: 1, water: 2 };
+  // derived rows without an exponent: weighted sums of rows that have one (Lyons & Parker 1988)
+  const COMPOSITE = {}; // derived composite rows (id: [[weight, id], ...]); none at present
+  let FREQ = 0.5;
+  const fscale = (y) => Math.pow(FREQ / 0.5, y);
+  const testRange = (s) => { const n = String(s || "").replace(/~/g, "").split(/[–-]/).map(parseFloat).filter(isFinite); return n.length ? [Math.min(...n), Math.max(...n)] : null; };
+  // significant digits of a stored value; a converted value keeps at least 4, and never fewer than the source
+  const sig = (s) => String(s).replace(/^[-+]?0*\.?0*/, "").replace(".", "").replace(/e.*$/i, "").length;
+  // display value of x (canonical unit, possibly rescaled in frequency); src = stored value, for the precision
+  const conv = (x, p, src) => {
+    const f = UNITS[p]?.[UNIT[p]] ?? 1;
+    if (x === "" || x == null || !isFinite(+x)) return x;
+    if (f === 1 && x === src) return src;
+    return String(+(+x * f).toPrecision(Math.max(4, sig(src))));
+  };
+  // canonical (dB/cm) value of row field k at the selected frequency
+  function atFreq(r, k, byId) {
+    const s = r._c[k];
+    if (s === "" || s == null || FREQ === 0.5 || !FREQ_PROPS.includes(r.property)) return s;
+    const mix = COMPOSITE[r.id];
+    if (mix) return k === "value" && mix.every(([, id]) => byId[id]) ? String(mix.reduce((a, [w, id]) => a + w * +atFreq(byId[id], "value", byId), 0)) : "";
+    const b = parseFloat(r.exponent_b);
+    return isFinite(b) ? String(+s * fscale(b)) : "";
+  }
+  // rewrite displayed values from the canonical copies (r._c, b._c) kept at load
+  function applyUnit() {
+    Object.keys(UNITS).forEach((p) => (PROPS[p].unit = UNIT[p] + (FREQ_PROPS.includes(p) ? ` @ ${FREQ} MHz` : "")));
+    const byId = Object.fromEntries(DATA.map((r) => [r.id, r]));
+    DATA.forEach((r) => {
+      UNIT_FIELDS.forEach((k) => (r[k] = conv(k === "db_cm_1mhz" ? r._c[k] : atFreq(r, k, byId), r.property, r._c[k])));
+      const rg = FREQ_PROPS.includes(r.property) && testRange(r.test_freq_mhz);
+      r.xp = !!rg && (FREQ < rg[0] - 1e-9 || FREQ > rg[1] + 1e-9); // selected frequency outside the measured range
+    });
+    BOUNDS.forEach((b) => (b.value = conv(FREQ_PROPS.includes(b.property) && FREQ !== 0.5 ? String(+b._c * fscale(SIM_Y[b.tissue] ?? 1)) : b._c, b.property, b._c)));
+  }
+  const xpTitle = (r) => `extrapolated: measured at ${r.test_freq_mhz} MHz, scaled to ${FREQ} MHz with b = ${r.exponent_b || "of its components"}`;
+  // unit picker of one property (overview table); attenuation and absorption also pick the frequency
+  const unitPick = (p) => `<select class="unit-pick" data-unit="${p}" aria-label="Unit of ${PROPS[p].name.toLowerCase()}">${Object.keys(UNITS[p]).map((u) =>
+    `<option ${u === UNIT[p] ? "selected" : ""}>${esc(u)}</option>`).join("")}</select>${FREQ_PROPS.includes(p) ? ` @ <select class="unit-pick" data-freq="${p}" aria-label="Frequency of ${PROPS[p].name.toLowerCase()} (MHz)">${FREQS.map((f) =>
+    `<option value="${f}" ${f === FREQ ? "selected" : ""}>${f}</option>`).join("")}</select> MHz` : ""}`;
+
   // ---------- LOW/HIGH bounds (versioned, data/bounds.csv) ----------
   const vkey = (v) => { const [core, pre] = v.split("-"); return core.split(".").map(Number).reduce((a, x) => a * 1000 + x, 0) * 2 + (pre ? 0 : 1); }; // a pre-release (X.Y.Z-label) sorts before its release
   const boundVersions = () => [...new Set(BOUNDS.map((b) => b.version))].sort((a, b) => vkey(b) - vkey(a));
@@ -71,11 +133,7 @@
     const byId = {};
     Object.values(BMAP).forEach((o) => Object.values(o).forEach((b) => { if (b.id) byId[b.id] = (byId[b.id] ? byId[b.id] + "+" : "") + b.bound; }));
     DATA.forEach((r) => { r.bound = byId[r.id] || "none"; });
-    // what changed relative to the previous version (for the version note)
-    const prev = cur[cur.indexOf(BV) + 1];
-    BOUNDS_CHANGED = prev ? BOUNDS.filter((b) => b.version === BV && !BOUNDS.some((o) => o.version === prev && o.tissue === b.tissue && o.property === b.property && o.bound === b.bound && +o.value === +b.value)).length : null;
   }
-  let BOUNDS_CHANGED = null;
   const BLABEL = { low: "LOW", high: "HIGH", reference: "BENCHMARK", uniform: "ref." };
   const boundPill = (b) => b === "none" ? "" : b.split("+").map((x) => `<span class="bpill b-${x}">${x === "uniform" ? "ref." : x.toUpperCase()}</span>`).join(" ");
 
@@ -95,8 +153,11 @@
     s.hl = p.get("hl") || "";
     if (p.has("hc")) s.hide = new Set(p.get("hc").split(",").filter(Boolean));
     if (MODES[p.get("cmp")]) CMP.mode = p.get("cmp");
-    CMP.values = p.get("cv") !== "0"; CMP.water = p.get("cw") === "1"; CMP.bench = p.get("bm") === "1";
-    CMP.hidden = new Set(p.get("ch") ? p.get("ch").split("|") : []);
+    CMP.values = p.get("cv") !== "0"; CMP.bench = p.get("bm") === "1";
+    CMP.hidden = p.has("ch") ? new Set(p.get("ch").split("|").filter(Boolean)) : hiddenDefault();
+    UNIT = { ...CANON };
+    FREQ = FREQS.includes(+p.get("f")) ? +p.get("f") : 0.5;
+    (p.get("u") || "").split(";").forEach((x) => { const [k, u] = x.split(":"); if (UNITS[k]?.[u]) UNIT[k] = u; });
     return s;
   }
   function writeHash() {
@@ -115,10 +176,12 @@
     if (META.version && META.version !== CURRENT) p.set("v", META.version);
     if (CMP.mode !== "tissue") p.set("cmp", CMP.mode);
     if (!CMP.values) p.set("cv", "0");
-    if (CMP.water) p.set("cw", "1");
     if (CMP.bench) p.set("bm", "1");
     if ([...S.hide].sort().join(",") !== COL_DEFAULT_HIDDEN.slice().sort().join(",")) p.set("hc", [...S.hide].join(","));
-    if (CMP.hidden.size) p.set("ch", [...CMP.hidden].join("|"));
+    if (!sameSet(CMP.hidden, [...hiddenDefault()])) p.set("ch", [...CMP.hidden].join("|")); // empty value = all shown
+    const uset = Object.keys(UNITS).filter((k) => UNIT[k] !== CANON[k]).map((k) => `${k}:${UNIT[k]}`);
+    if (uset.length) p.set("u", uset.join(";"));
+    if (FREQ !== 0.5) p.set("f", String(FREQ));
     const h = p.toString();
     history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
   }
@@ -195,7 +258,7 @@
     if (v === "" || v == null) return "";
     const x = +v;
     if (!isFinite(x)) return esc(v);
-    if (x !== 0 && Math.abs(x) < 0.01) return String(+x.toPrecision(3));
+    if (x !== 0 && Math.abs(x) < 1) return String(+x.toPrecision(3)); // small values: 3 significant figures
     return x.toLocaleString("en-US", { maximumFractionDigits: 3 });
   }
   const valStr = (r) => r.value === "" ? "—" : fmt(r.value) + (r.value_max ? "–" + fmt(r.value_max) : "");
@@ -236,9 +299,9 @@
       const on = S.hl && rowKeys(r).includes(S.hl) ? " on" : "";
       const k = Math.round(x(+r.value)); const j = (jit[k] = (jit[k] || 0) + 1) - 1;
       const yy = Y - 8 + (j % 3) * 8;
-      const t = `<title>${esc(r.label)} — ${valStr(r)} (${esc(shortRef(r.ref))})</title>`;
+      const t = `<title>${esc(r.label)} — ${valStr(r)} (${esc(shortRef(r.ref))})${r.xp ? " — " + esc(xpTitle(r)) : ""}</title>`;
       if (r.value_max) return `<line class="rng${ex}${on}" data-id="${r.id}" x1="${x(+r.value)}" x2="${x(+r.value_max)}" y1="${yy}" y2="${yy}">${t}</line>`;
-      return `<circle class="dot${ex}${on}" data-id="${r.id}" cx="${x(+r.value)}" cy="${yy}" r="5">${t}</circle>`;
+      return `<circle class="dot${ex}${on}${r.xp ? " xp" : ""}" data-id="${r.id}" cx="${x(+r.value)}" cy="${yy}" r="5">${t}</circle>`;
     }).join("");
     return `<svg class="strip" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Distribution of values; shaded band spans non-excluded values, line marks the median">
       ${band}
@@ -253,13 +316,16 @@
     return out;
   }
 
+  // notes collapse to a "Note" toggle and open in a full-width row under the value; open ones stay open across redraws
+  const OPEN_NOTES = new Set();
+  const noteBox = (r) => { const o = OPEN_NOTES.has(r.id); return `<button type="button" class="note-btn" data-note="${r.id}" aria-expanded="${o}" aria-controls="note-${r.id}">${o ? "▾" : "▸"} Note</button>`; };
   function table(rows, prop) {
     const att = prop === "attenuation" || prop === "absorption_coefficient";
     const cols = [
       ["division", "Tissue"], ["value", "Value", "num"], ["reported", "Reported"],
       ...(att || rows.some((r) => r.test_freq_mhz) ? [["test_freq_mhz", "f (MHz)", "num"]] : []),
-      ...(att ? [["exponent_b", "b", "num"], ["db_cm_1mhz", "dB/cm @1 MHz", "num"]] : []),
-      ["species", "Species"], ["preparation", "Preparation"], ["status", "Status"], ["bound", "Bound"], ["ref", "Reference"],
+      ...(att ? [["exponent_b", "b", "num"], ["db_cm_1mhz", `${UNIT[prop]} @1 MHz`, "num"]] : []),
+      ["species", "Species"], ["preparation", "Preparation"], ["condition", "Condition"], ["status", "Status"], ["bound", "Bound"], ["ref", "Reference"],
     ].filter(([k]) => !S.hide.has(k));
     const show = (k) => !S.hide.has(k);
     const key = `${rows[0].tissue}:${prop}`;
@@ -282,12 +348,12 @@
         if (k === "division") {
           // links sit under the reference; here only when the Reference column is hidden
           const sub = [show("id") ? `<span class="id">${r.id}</span>` : "", show("links") && !show("ref") ? (show("id") ? edit : edit.replace(/^ /, "")) + discuss : ""].join("");
-          const note = r.notes && show("notes") && !show("reported") ? `<span class="sub">${esc(r.notes)}</span>` : "";
+          const note = r.notes && show("notes") && !show("reported") ? noteBox(r) : "";
           return `<td>${esc(r.label)}${sub ? `<span class="sub">${sub}</span>` : ""}${note}</td>`;
         }
-        if (k === "value") return `<td class="num val">${valStr(r)}</td>`;
-        if (k === "reported") return `<td class="reported">${esc(r.reported)}${r.notes && show("notes") ? `<span class="sub">${esc(r.notes)}</span>` : ""}</td>`;
-        if (k === "species" || k === "preparation") return `<td class="cat">${esc(r[k])}</td>`;
+        if (k === "value") return r.xp ? `<td class="num val xp" title="${esc(xpTitle(r))}">${valStr(r)}*</td>` : `<td class="num val">${valStr(r)}</td>`;
+        if (k === "reported") return `<td class="reported">${esc(r.reported)}${r.notes && show("notes") ? noteBox(r) : ""}</td>`;
+        if (k === "species" || k === "preparation" || k === "condition") return `<td class="cat">${esc(r[k])}</td>`;
         if (k === "bound") return `<td class="cat">${boundPill(r.bound)}</td>`;
         if (k === "status") return `<td class="cat st-${r.status}">${esc(r.status)}</td>`;
         if (k === "ref") {
@@ -297,7 +363,8 @@
         return `<td class="${c || ""}">${k === "test_freq_mhz" ? esc(r[k]) : fmt(r[k])}</td>`;
       }).join("");
       const thread = openThread === r.id ? `<tr class="thread-row"><td colspan="${cols.length}"><div class="thread" id="thread-host"></div></td></tr>` : "";
-      return `<tr id="row-${r.id}" class="${ex ? "excl" : ""} ${hl ? "hl" : ""} ${r.bound !== "none" ? "brow b-" + r.bound.split("+")[0] : ""}">${cells}</tr>${thread}`;
+      const noteRow = r.notes && show("notes") && OPEN_NOTES.has(r.id) ? `<tr class="note-row ${ex ? "excl" : ""}" id="note-${r.id}"><td colspan="${cols.length}">${esc(r.notes)}</td></tr>` : "";
+      return `<tr id="row-${r.id}" class="${ex ? "excl" : ""} ${hl ? "hl" : ""} ${r.bound !== "none" ? "brow b-" + r.bound.split("+")[0] : ""} ${noteRow ? "has-note" : ""}">${cells}</tr>${noteRow}${thread}`;
     }).join("");
     return `<div class="tbl-wrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`;
   }
@@ -315,14 +382,24 @@
     props.forEach((p) => TISSUES.forEach((t) => { st[p][t] = st[p][t] ? rangeStats(st[p][t]) : null; }));
 
     // table
-    const head = `<thead><tr><th>Property</th>${TISSUES.map((t) => `<th class="num t-${t}">${cap(t)}</th>`).join("")}</tr></thead>`;
-    const body = props.map((p) => `<tr><td class="prop">${PROPS[p].name}<span class="sub">${PROPS[p].unit}</span></td>${TISSUES.map((t) => {
+    const unitsReset = FREQ !== 0.5 || Object.keys(UNITS).some((p) => UNIT[p] !== CANON[p]) ? ` <button type="button" id="units-reset" class="link-btn">default units</button>` : "";
+    const head = `<thead><tr><th>Property · unit${unitsReset}</th>${OV_TISSUES.map((t) => `<th class="num t-${t}">${cap(t)}</th>`).join("")}</tr></thead>`;
+    const body = props.map((p) => `<tr><td class="prop">${PROPS[p].name}<span class="sub">${UNITS[p] ? unitPick(p) : PROPS[p].unit}</span></td>${OV_TISSUES.map((t) => {
       const v = st[p][t];
       const bd = BMAP[`${t}|${p}`];
-      const btxt = bd ? (bd.uniform ? `ref. ${fmt(bd.uniform.value)}` : `bounds ${bd.low ? fmt(bd.low.value) : "?"}–${bd.high ? fmt(bd.high.value) : "?"}${bd.reference && CMP.bench ? `</span><span class="sub bsub bref">benchmark ${fmt(bd.reference.value)}` : ""}`) : "";
-      if (!v) return `<td class="none">—${btxt ? `<span class="sub bsub">${btxt}</span>` : ""}</td>`;
-      const r = v.lo === v.hi ? fmt(v.lo) : `${fmt(v.lo)}–${fmt(v.hi)}`;
-      return `<td><button type="button" class="cellbtn" data-ov="${t}|${p}" title="Show ${t} ${PROPS[p].name.toLowerCase()} values"><span class="rng-txt">${r}</span><span class="sub">median ${fmt(v.m)} · n ${v.n}</span>${btxt ? `<span class="sub bsub">${btxt}</span>` : ""}</button></td>`;
+      const r = v ? (v.lo === v.hi ? fmt(v.lo) : `${fmt(v.lo)}–${fmt(v.hi)}`) : "";
+      // bounds (or the water ref. value) only when they differ from the range shown above them
+      const bstr = bd ? (bd.uniform ? fmt(bd.uniform.value) : `${bd.low ? fmt(bd.low.value) : "?"}–${bd.high ? fmt(bd.high.value) : "?"}`) : "";
+      // brain absorption as a fraction of the attenuation bound at the same level (as in Table 1), from canonical values
+      const ad = t === "brain" && p === "absorption_coefficient" ? BMAP["brain|attenuation"] : null;
+      const frac = (k) => (ad && bd?.[k] && ad[k] ? Math.round((100 * +bd[k]._c) / +ad[k]._c) : null);
+      const fTitle = "absorption bound ÷ attenuation bound at the same level";
+      const fLH = frac("low") != null && frac("high") != null ? `<span class="sub bsub" title="${fTitle}">${frac("low")}–${frac("high")} % of attenuation</span>` : "";
+      const bref = bd && bd.reference && CMP.bench ? `benchmark ${fmt(bd.reference.value)}${frac("reference") != null ? ` (${frac("reference")} %)` : ""}` : "";
+      const btxt = (bstr && bstr !== r ? `<span class="sub bsub">${bd.uniform ? "ref. " : "bounds "}${bstr}</span>` : "") + fLH +
+        (bref ? `<span class="sub bsub bref"${frac("reference") != null ? ` title="${fTitle}"` : ""}>${bref}</span>` : "");
+      if (!v) return `<td class="none">—${btxt}</td>`;
+      return `<td><button type="button" class="cellbtn" data-ov="${t}|${p}" title="Show ${t} ${PROPS[p].name.toLowerCase()} values"><span class="rng-txt">${r}</span><span class="sub">median ${fmt(v.m)} · n ${v.n}</span>${btxt}</button></td>`;
     }).join("")}</tr>`).join("");
     $("#ov-table").innerHTML = props.length ? head + `<tbody>${body}</tbody>` : `<tbody><tr><td class="none">No values match the current filters.</td></tr></tbody>`;
 
@@ -330,7 +407,10 @@
   }
 
   // ---------- comparison chart (overview): user-selected grouping ----------
-  const CMP = { mode: "tissue", values: true, water: false, bench: false, hidden: new Set() };
+  const CMP = { mode: "tissue", values: true, bench: false, hidden: new Set(["water"]) };
+  // legend groups hidden until clicked: water in the tissue view, non-human species in the species view
+  const hiddenDefault = () => new Set(CMP.mode === "tissue" ? ["water"]
+    : CMP.mode === "species" ? facetColors("species").vals.filter((v) => v !== "human") : []);
   const SKULL_LAYER = { cortical: "cortical", "cortical (outer table)": "cortical", "cortical (inner table)": "cortical", cancellous: "trabecular", "diploë": "trabecular" };
   const tok = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const NEUTRAL = new Set(["unspecified", "n/a"]);
@@ -338,9 +418,9 @@
   const G = (key, label, color, test, tissue, anchor) => ({ key, label, color, test, tissue, anchor });
   const MODES = {
     tissue: { label: "Tissue", groups: () => [
+      G("water", "water", "--water", T("water"), "water", true),
       G("brain", "brain", "--brain", T("brain"), "brain", true),
-      G("skull", "skull", "--skull", T("skull"), "skull", true),
-      ...(CMP.water ? [G("water", "water", "--water", T("water"), "water", true)] : [])] },
+      G("skull", "skull", "--skull", T("skull"), "skull", true)] },
     skull_layer: { label: "Skull layer", groups: () => [
       G("brain", "brain", "--brain", T("brain"), "brain", true),
       G("skull", "skull (all)", "--skull", T("skull"), "skull", true),
@@ -356,6 +436,7 @@
       G("brain-proxy", "non-brain proxy", "--c4", (r) => r.tissue === "brain" && r.division.startsWith("proxy"), "brain")] },
     species: { label: "Species", field: "species" },
     preparation: { label: "Preparation", field: "preparation" },
+    condition: { label: "Condition", field: "condition" },
     status: { label: "Status", field: "status" },
   };
   // colour follows the value, assigned once from the full dataset (most frequent first)
@@ -372,8 +453,7 @@
     const m = MODES[CMP.mode] || MODES.tissue;
     if (!m.field) return [{ title: "", groups: m.groups() }];
     const { vals, col } = facetColors(m.field);
-    const tissues = ["skull", "brain"].concat(CMP.water ? ["water"] : []);
-    return tissues.map((t) => ({
+    return ["skull", "brain"].map((t) => ({
       title: cap(t), tissue: t,
       groups: vals.filter((v) => DATA.some((r) => r.tissue === t && fvals(r, m.field).includes(v)))
         .map((v) => ({ key: v, label: v, color: col[v], test: (r) => r.tissue === t && fvals(r, m.field).includes(v), tissue: t })),
@@ -409,11 +489,12 @@
     // legend (inside the SVG so exports carry it)
     let lx = 8, ly = 16; const lrows = [];
     const litems = legend.map((g) => ({ g, w: 22 + g.label.length * 6.6 + 16 }))
-      .concat([{ dot: true, w: 22 + 15 * 6.6 }, { bnd: true, w: 22 + 16 * 6.6 }, ...(CMP.bench ? [{ ref: true, w: 22 + 19 * 6.6 }] : [])]);
+      .concat([{ dot: true, w: 22 + 15 * 6.6 }, ...(rows.some((r) => r.xp && props.includes(r.property)) ? [{ xp: true, w: 22 + 26 * 6.6 }] : []), { bnd: true, w: 22 + 16 * 6.6 }, ...(CMP.bench ? [{ ref: true, w: 22 + 19 * 6.6 }] : [])]);
     const lsvg = litems.map((it) => {
       if (lx + it.w > W0 - 8) { lx = 8; ly += 20; }
       const x = lx; lx += it.w;
       if (it.dot) return `<g><circle cx="${x + 6}" cy="${ly - 4}" r="3" fill="${marker}"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12">literature value</text></g>`;
+      if (it.xp) return `<g><circle cx="${x + 6}" cy="${ly - 4}" r="3" fill="${surface}" stroke="${marker}" stroke-width="1.2"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12">extrapolated in frequency</text></g>`;
       if (it.ref) return `<g><line x1="${x}" x2="${x + 12}" y1="${ly - 4}" y2="${ly - 4}" stroke="${bench}" stroke-width="3"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12">reference benchmark</text></g>`;
       if (it.bnd) return `<g><line x1="${x}" x2="${x + 12}" y1="${ly - 4}" y2="${ly - 4}" stroke="${marker}" stroke-width="2"/><text x="${x + 16}" y="${ly}" fill="${ink}" font-size="12">LOW / HIGH bound</text></g>`;
       const off = CMP.hidden.has(it.g.key);
@@ -426,11 +507,13 @@
     let svg = "";
     props.forEach((p, i) => {
       const x0 = i * cw, ax = x0 + 46;
-      // scale: shared across groups in one row; per row when faceted (rows differ by tissue)
+      // scale: shared across groups in one row; per row when faceted (rows differ by tissue).
+      // Absorption shares the attenuation axis (absorption cannot exceed attenuation) when both use one unit.
+      const ps = FREQ_PROPS.includes(p) && UNIT.attenuation === UNIT.absorption_coefficient ? FREQ_PROPS : [p];
       const scaleFor = (fs) => {
         const vals = [];
-        fs.forEach((f) => f.vis.forEach((g) => rows.filter((r) => r.property === p && g.test(r)).forEach((r) => { vals.push(+r.value); if (r.value_max) vals.push(+r.value_max); })));
-        new Set(fs.flatMap((f) => f.vis.map((g) => g.tissue))).forEach((t) => ["low", "high", "reference"].forEach((k) => { const bd = BMAP[`${t}|${p}`]?.[k]; if (bd && t !== "water") vals.push(+bd.value); }));
+        fs.forEach((f) => f.vis.forEach((g) => rows.filter((r) => ps.includes(r.property) && g.test(r)).forEach((r) => { vals.push(+r.value); if (r.value_max) vals.push(+r.value_max); })));
+        new Set(fs.flatMap((f) => f.vis.map((g) => g.tissue))).forEach((t) => ps.forEach((q) => ["low", "high", "reference"].forEach((k) => { const bd = BMAP[`${t}|${q}`]?.[k]; if (bd && t !== "water") vals.push(+bd.value); })));
         if (!vals.length) return null;
         let lo = Math.min(...vals), hi = Math.max(...vals);
         if (lo === hi) { lo -= Math.abs(lo) * 0.1 || 1; hi += Math.abs(hi) * 0.1 || 1; }
@@ -441,7 +524,7 @@
       };
       const shared = scaleFor(facets);
       if (!shared) return;
-      const unit = PROPS[p].unit.replace(" @ 0.5 MHz", " @0.5MHz");
+      const unit = PROPS[p].unit.replace(/ @ (\S+) MHz$/, " @$1MHz");
       let colSvg = `<rect x="${x0}" y="${legendH}" width="${cw}" height="${H - legendH}" fill="transparent"/>`;
       facets.forEach((f, fi) => {
         const { a, b, step } = (m.field && scaleFor([f])) || shared;
@@ -470,9 +553,9 @@
           if (CMP.values) {
             rs.forEach((r) => {
               const jx = bx + bw / 2 + (hash32(r.id) - 0.5) * bw * 0.6;
-              const t = `<title>${esc(r.label)} — ${valStr(r)} (${esc(shortRef(r.ref))}) · click to open</title>`;
+              const t = `<title>${esc(r.label)} — ${valStr(r)} (${esc(shortRef(r.ref))})${r.xp ? " — " + esc(xpTitle(r)) : ""} · click to open</title>`;
               if (r.value_max) colSvg += `<g data-goto="${r.id}" tabindex="0" role="button" aria-label="Open ${r.id}" style="cursor:pointer"><line x1="${jx}" x2="${jx}" y1="${y(+r.value)}" y2="${y(+r.value_max)}" stroke="${marker}" stroke-width="1.5"/><circle cx="${jx}" cy="${y(+r.value)}" r="2.4" fill="${marker}"/><circle cx="${jx}" cy="${y(+r.value_max)}" r="2.4" fill="${marker}"/>${t}</g>`;
-              else colSvg += `<circle data-goto="${r.id}" tabindex="0" role="button" aria-label="Open ${r.id}" style="cursor:pointer" cx="${jx}" cy="${y(+r.value)}" r="3" fill="${r.status === "excluded" ? "none" : marker}" stroke="${marker}" stroke-width="${r.status === "excluded" ? 1.2 : 0}">${t}</circle>`;
+              else colSvg += `<circle data-goto="${r.id}" tabindex="0" role="button" aria-label="Open ${r.id}" style="cursor:pointer" cx="${jx}" cy="${y(+r.value)}" r="3" fill="${r.status === "excluded" ? "none" : r.xp ? surface : marker}" stroke="${marker}" stroke-width="${r.status === "excluded" || r.xp ? 1.2 : 0}">${t}</circle>`;
             });
           } else {
             colSvg += `<ellipse cx="${bx + bw / 2}" cy="${y(st.m)}" rx="2.6" ry="5" fill="${marker}"><title>median ${fmt(st.m)}</title></ellipse>`;
@@ -491,7 +574,11 @@
     });
     box.innerHTML = props.length
       ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${font}" role="group" aria-label="Literature values per property, grouped by ${esc(m.label.toLowerCase())}"><rect class="bg" width="${W}" height="${H}" fill="${surface}"/>${lsvg}${svg}</svg>`
-      : `<p class="none">No values to plot under the current filters.</p>`;
+      // all groups hidden: keep the legend, so they can be shown again
+      : CMP.hidden.size && legend.length
+        ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W0} ${ly + 10}" width="${W0}" height="${ly + 10}" font-family="${font}" role="group" aria-label="Chart legend"><rect class="bg" width="${W0}" height="${ly + 10}" fill="${surface}"/>${lsvg}</svg>
+           <p class="none">All groups are hidden. Click a legend entry to show it, or <button type="button" id="cmp-showall" class="link-btn">show all</button>.</p>`
+        : `<p class="none">No values to plot under the current filters.</p>`;
   }
   const g0anchor = (f) => f.vis.some((g) => g.anchor);
 
@@ -577,7 +664,7 @@
   }
   function renderCompareControls() {
     $("#cmp").innerHTML = Object.entries(MODES).map(([k, m]) => `<option value="${k}" ${k === CMP.mode ? "selected" : ""}>${m.label}</option>`).join("");
-    $("#cmp-values").checked = CMP.values; $("#cmp-water").checked = CMP.water; $("#cmp-bench").checked = CMP.bench;
+    $("#cmp-values").checked = CMP.values; $("#cmp-bench").checked = CMP.bench;
   }
   function gotoRow(id) {
     const r = DATA.find((x) => x.id === id); if (!r) return;
@@ -593,9 +680,8 @@
     const old = META.version !== CURRENT, ban = $("#vbanner");
     ban.hidden = !old;
     if (old) ban.innerHTML = `You are viewing database <b>v${esc(META.version)}</b> (${esc(META.date || "")}). The current version is v${esc(CURRENT)}. <button type="button" id="to-current" class="link-btn">Show current version</button>`;
-    $("#bv-note").textContent = BOUNDS_CHANGED == null ? "" : `${BOUNDS_CHANGED} bound${BOUNDS_CHANGED === 1 ? "" : "s"} changed vs. previous version`;
   }
-  function render() { applyBounds(); renderVersion(); renderCompareControls(); renderColumnControls(); renderControls(); renderOverview(); renderResults(); writeHash(); }
+  function render() { applyUnit(); applyBounds(); renderVersion(); renderCompareControls(); renderColumnControls(); renderControls(); renderOverview(); renderResults(); writeHash(); }
 
   // ---------- events ----------
   function bind() {
@@ -647,7 +733,10 @@
         const k = t.dataset.key, cur = S.sort[k] || { k: "value", d: 1 };
         S.sort[k] = { k: t.dataset.sort, d: cur.k === t.dataset.sort ? -cur.d : 1 };
       }
-      else if (t.id === "reset") { S = { ...DEFAULT(), hide: S.hide }; $("#ref-search").value = ""; } // filters only; keep the column choice
+      else if (t.dataset.note) { const id = t.dataset.note; OPEN_NOTES.has(id) ? OPEN_NOTES.delete(id) : OPEN_NOTES.add(id); renderResults(); $(`.note-btn[data-note="${CSS.escape(id)}"]`)?.focus(); return; }
+      else if (t.id === "cmp-showall") CMP.hidden.clear();
+      else if (t.id === "reset") { S = { ...DEFAULT(), hide: S.hide }; CMP.hidden = hiddenDefault(); $("#ref-search").value = ""; } // filters only; keep the column choice
+      else if (t.id === "units-reset") { UNIT = { ...CANON }; FREQ = 0.5; }
       else if (t.id === "dl") return download(false);
       else if (t.id === "dl-all") return download(true);
       else if (t.id === "share") { navigator.clipboard?.writeText(location.href); t.textContent = "Copied"; setTimeout(() => (t.textContent = "Copy link"), 1200); return; }
@@ -671,9 +760,10 @@
       else if (t.dataset.ref) { t.checked ? S.refsOff.delete(t.dataset.ref) : S.refsOff.add(t.dataset.ref); }
       else if (t.id === "ref-deep") S.deep = t.checked;
       else if (t.id === "bv") { switchVersion(t.value); return; }
-      else if (t.id === "cmp") { CMP.mode = t.value; CMP.hidden.clear(); }
+      else if (t.dataset.freq) { FREQ = +t.value; render(); $(`select[data-freq="${t.dataset.freq}"]`)?.focus(); return; }
+      else if (t.dataset.unit) { UNIT[t.dataset.unit] = t.value; render(); $(`select[data-unit="${t.dataset.unit}"]`)?.focus(); return; } // keep focus on the redrawn picker
+      else if (t.id === "cmp") { CMP.mode = t.value; CMP.hidden = hiddenDefault(); }
       else if (t.id === "cmp-values") CMP.values = t.checked;
-      else if (t.id === "cmp-water") CMP.water = t.checked;
       else if (t.id === "cmp-bench") CMP.bench = t.checked;
       else if (t.dataset.col) { t.checked ? S.hide.delete(t.dataset.col) : S.hide.add(t.dataset.col); }
       else return;
@@ -702,7 +792,7 @@
     property: "property key", value: "value in the canonical unit (attenuation: dB/cm at 0.5 MHz)", value_max: "upper end if the source reports a range",
     unit: "canonical unit", reported: "value as printed in the source", test_freq_mhz: "test frequency or range (MHz)",
     exponent_b: "power-law exponent of attenuation", db_cm_1mhz: "attenuation at 1 MHz (dB/cm)", species: "species (;-separated)",
-    preparation: "sample preparation", status: "included / excluded / proposed", ref: "key of the primary source", via: "secondary source the value was taken from",
+    preparation: "source of the value: in vivo, ex vivo, model-derived, compilation or reference standard", condition: "tissue state at measurement for ex vivo rows: fresh, frozen, fixed, embalmed, dried, mixed or unspecified", status: "included / excluded / proposed", ref: "key of the primary source", via: "secondary source the value was taken from",
     sources: "sources cited by a compilation (;-separated)", notes: "exclusion reason, caveats, conversions",
     bound: "LOW/HIGH bound this row defines in bound_version", bound_version: "version of the LOW/HIGH bounds", db_version: "database version",
     citation: "citation of the primary source", doi: "DOI of the primary source",
@@ -735,7 +825,7 @@
     const src = all ? DATA : current;
     const v = META.version || "unknown", scope = all ? "all" : S.tissue;
     const cols = COLS.concat(["bound", "bound_version", "db_version", "citation", "doi"]);
-    const rows = src.map((r) => ({ ...r, db_version: v, bound_version: BV, citation: REFS[r.ref]?.citation || "", doi: REFS[r.ref]?.doi || "" }));
+    const rows = src.map((r) => ({ ...r, ...r._c, db_version: v, bound_version: BV, citation: REFS[r.ref]?.citation || "", doi: REFS[r.ref]?.doi || "" }));
     const name = `tus-properties_v${v}_${scope}`;
     const off = Object.fromEntries(FACETS.filter((f) => S.off[f].size).map((f) => [f, [...S.off[f]]]));
     const meta = {
@@ -745,9 +835,9 @@
         tissue: S.tissue, properties: [...S.props], unticked: off, references_excluded: [...S.refsOff],
         match_indirect_references: S.deep, search: S.q,
       },
-      bounds: BOUNDS.filter((b) => b.version === BV).map(({ tissue, property, bound, value, id, notes }) => ({ tissue, property, bound, value: +value, id, notes })),
+      bounds: BOUNDS.filter((b) => b.version === BV).map(({ tissue, property, bound, _c, id, notes }) => ({ tissue, property, bound, value: +_c, id, notes })),
       columns: Object.fromEntries(cols.map((c) => [c, COL_INFO[c] || ""])),
-      notes: "Attenuation and absorption coefficient: dB/cm at 0.5 MHz, value = db_cm_1mhz * 0.5^exponent_b. Ranges, medians and n on the site use non-excluded values.",
+      notes: "Values in the canonical unit of each property (column unit), whatever unit the site displayed; attenuation and absorption: dB/cm at 0.5 MHz, value = db_cm_1mhz * 0.5^exponent_b. Ranges, medians and n on the site use non-excluded values.",
       licence: "Data CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/); cite the original sources and this compilation.",
       citation: ($(".site-footer .cite")?.textContent || "").replace(/\s+/g, " ").trim(),
     };
@@ -795,7 +885,11 @@
     const [m, r, bc, mj] = await Promise.all([get("measurements.csv"), get("references.csv"), get("bounds.csv", true), get("meta.json")]);
     META = JSON.parse(mj); if (!CURRENT) CURRENT = META.version;
     BOUNDS = bc ? parseCSV(bc) : []; BV = META.version;
-    DATA = parseCSV(m).filter((r) => r.property in PROPS); COLS = Object.keys(DATA[0]).filter((k) => k !== "_line");
+    DATA = parseCSV(m).filter((r) => r.property in PROPS);
+    // versions before `condition`: derive it from the old preparation tags
+    DATA.forEach((r) => { if (!("condition" in r)) { r.condition = r.preparation === "fixed" ? "fixed" : r.preparation === "ex vivo" ? "unspecified" : "n/a"; if (r.preparation === "fixed") r.preparation = "ex vivo"; } }); COLS = Object.keys(DATA[0]).filter((k) => k !== "_line");
+    DATA.forEach((r) => (r._c = Object.fromEntries(UNIT_FIELDS.map((k) => [k, r[k]]))));
+    BOUNDS.forEach((b) => (b._c = b.value));
     REFS = Object.fromEntries(parseCSV(r).map((x) => [x.key, x]));
     document.querySelectorAll("[data-version]").forEach((el) => (el.textContent = `v${META.version}`));
     document.querySelectorAll("[data-version-date]").forEach((el) => (el.textContent = META.date));

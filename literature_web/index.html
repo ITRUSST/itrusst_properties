@@ -79,6 +79,11 @@
       </section>
 
       <section class="fgroup">
+        <h3>Condition</h3>
+        <div id="f-condition" class="checks"></div>
+      </section>
+
+      <section class="fgroup">
         <div class="fgroup-head">
           <h3>References</h3>
           <span class="mini-actions">
@@ -98,21 +103,20 @@
       <section class="card overview" aria-labelledby="ov-title">
         <div class="card-head">
           <h2 id="ov-title">Overview <span class="unit">all tissues</span></h2>
-          <label class="bv-pick">Database version <select id="bv" aria-label="Database version"></select> <span id="bv-note" class="bv-note"></span></label>
-          <span class="stats">Ranges of non-excluded values under the current status, species, division, preparation and reference filters. Click a cell to open that table.</span>
+          <label class="bv-pick">Database version <select id="bv" aria-label="Database version"></select></label>
+          <span class="stats">Ranges of non-excluded values under the current status, species, division, preparation, condition and reference filters. Click a cell to open that table.</span>
         </div>
         <div class="ov-grid">
           <figure class="ov-fig">
             <div class="ov-controls">
               <label>Compare by <select id="cmp" aria-label="Group values by"></select></label>
               <label class="toggle-inline"><input type="checkbox" id="cmp-values" checked> literature values</label>
-              <label class="toggle-inline"><input type="checkbox" id="cmp-water"> include water</label>
               <label class="toggle-inline" title="Values used as the reference setting in the simulations (Table 1); not a literature value"><input type="checkbox" id="cmp-bench"> reference benchmark</label>
               <span class="ov-export">Save plot: <button type="button" id="dl-svg" class="link-btn">SVG</button> <button type="button" id="dl-png" class="link-btn">PNG</button></span>
             </div>
             <div id="ov-chart"></div>
             <figcaption class="legend">
-              <span class="legend-note">Bars span the range of non-excluded values (Status view: all values that pass the filters; excluded values are unticked by default under Status); dots are individual literature values (click one to open it). Black ticks mark the LOW/HIGH bounds; tick “reference benchmark” to also show the simulation reference values of Table 1 (green). Medians treat a value reported as a range as its midpoint. Each property has its own linear scale (per row when split by tissue). Click a legend entry to hide or show a group (keyboard: Tab, then Enter).</span>
+              <span class="legend-note">Bars span the range of non-excluded values; dots are individual literature values (click one to open it). Black ticks mark the LOW/HIGH bounds; tick “reference benchmark” to also show simulation reference values (green). Click a legend entry to hide or show a group (keyboard: Tab, then Enter).</span>
             </figcaption>
           </figure>
           <div class="tbl-wrap"><table id="ov-table" class="ov-table"></table></div>
