@@ -1,0 +1,51 @@
+cff-version: 1.2.0
+message: "If you use these data, please cite the article below and the original publications listed in literature_web/data/references.csv."
+type: dataset
+title: "TUS Tissue Properties"
+abstract: "Literature values for acoustic and thermal properties of skull, brain and water used in transcranial ultrasound (TUS) simulation, compiled by the ITRUSST Acoustic Properties Working Group, with LOW/reference/HIGH bounds from Table 1 of the article."
+version: 0.1.0
+date-released: 2026-10-30
+license: CC-BY-4.0
+url: "https://itrusst.github.io/itrusst_properties/"
+repository-code: "https://github.com/ITRUSST/itrusst_properties"
+keywords:
+  - transcranial ultrasound
+  - acoustic properties
+  - thermal properties
+  - skull
+  - brain
+  - simulation
+authors:
+  - family-names: Kosciessa
+    given-names: J. Q.
+  - family-names: Webb
+    given-names: T.
+  - family-names: Martin
+    given-names: E.
+  - family-names: Treeby
+    given-names: B.
+  - family-names: Butts Pauly
+    given-names: K.
+  - family-names: Verhagen
+    given-names: L.
+  - family-names: Pichardo
+    given-names: S.
+preferred-citation:
+  type: article
+  title: "Impact of acoustic property uncertainty on transcranial ultrasound simulation"
+  status: in-preparation
+  authors:
+    - family-names: Kosciessa
+      given-names: J. Q.
+    - family-names: Webb
+      given-names: T.
+    - family-names: Martin
+      given-names: E.
+    - family-names: Treeby
+      given-names: B.
+    - family-names: Butts Pauly
+      given-names: K.
+    - family-names: Verhagen
+      given-names: L.
+    - family-names: Pichardo
+      given-names: S.
