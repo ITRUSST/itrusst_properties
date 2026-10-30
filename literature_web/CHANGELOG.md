@@ -11,7 +11,7 @@ Each release bumps `data/meta.json` and `version`/`date-released` in `CITATION.c
 
 ## 0.1.0 — 2026-10-30
 
-First release, corresponding to Supplementary Table S1 and Table 1 of Kosciessa et al. (in preparation). Earlier drafts (0.1.0-alpha, 0.2.0) were never in production and are superseded by this version.
+First release, corresponding to Supplementary Table S1 and Table 1 of Kosciessa et al. (in preparation).
 
 - 143 values and 47 references for skull, brain and water (sound speed, density, attenuation, absorption coefficient, thermal conductivity, specific heat, perfusion), from Supplementary Table S1 and checked against the source papers.
 - LOW/HIGH bounds and reference benchmark for skull and brain, and uniform values for water, from Table 1 (the values used in the simulations).
