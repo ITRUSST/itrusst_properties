@@ -80,6 +80,10 @@ If you find this resource useful, please cite:
 
 > Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (in preparation). *Impact of acoustic property uncertainty on transcranial ultrasound simulation*.
 
+and the data set, with the version you used (the DOI resolves to the latest version; each version has its own DOI on Zenodo):
+
+> Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (2026). *TUS Tissue Properties* (Version X.Y.Z) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.23811004
+
 ## Provenance
 
 Seeded from Supplementary Table S1 of the manuscript above. Attenuation values are compared at 0.5 MHz using a per-row power-law exponent; see CONTRIBUTING.md.

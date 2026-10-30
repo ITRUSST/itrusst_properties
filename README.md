@@ -1,5 +1,7 @@
 # ITRUSST tissue properties
 
+[![DOI](https://zenodo.org/badge/1421867431.svg)](https://doi.org/10.5281/zenodo.23811004)
+
 Acoustic and thermal properties of skull, brain and water for transcranial ultrasound (TUS) simulation, compiled by the [ITRUSST Acoustic Properties Working Group](https://www.itrusst.com/working-group/properties), and the simulations that test how uncertainty in these properties changes predicted intensity and heating.
 
 - **Site**: https://itrusst.github.io/itrusst_properties/ (filterable table, comparison plots, downloads)
@@ -27,6 +29,10 @@ Corrections and new values are welcome through the issue templates or a pull req
 ## Citation
 
 > Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (in preparation). *Impact of acoustic property uncertainty on transcranial ultrasound simulation*.
+
+and the data set, with the version you used (the DOI resolves to the latest version; each version has its own DOI on Zenodo):
+
+> Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (2026). *TUS Tissue Properties* (Version X.Y.Z) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.23811004
 
 When reusing values, also cite the original publications listed in `literature_web/data/references.csv`.
 

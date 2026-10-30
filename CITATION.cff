@@ -6,6 +6,7 @@ abstract: "Literature values for acoustic and thermal properties of skull, brain
 version: 0.1.0
 date-released: 2026-10-30
 license: CC-BY-4.0
+doi: 10.5281/zenodo.23811004
 url: "https://itrusst.github.io/itrusst_properties/"
 repository-code: "https://github.com/ITRUSST/itrusst_properties"
 keywords:

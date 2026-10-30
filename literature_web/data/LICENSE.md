@@ -8,8 +8,8 @@ When reusing the data, cite the original publications listed in `references.csv`
 
 > Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (in preparation). *Impact of acoustic property uncertainty on transcranial ultrasound simulation*.
 
-and link the site, e.g.:
+and the data set, with the version you used:
 
-> ITRUSST Acoustic Properties Working Group (2026). *TUS Tissue Properties* [data set]. https://itrusst.github.io/itrusst_properties/
+> Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (2026). *TUS Tissue Properties* (Version X.Y.Z) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.23811004
 
 Individual values are facts reported in the cited literature; the licence covers the compilation, curation and annotations.
