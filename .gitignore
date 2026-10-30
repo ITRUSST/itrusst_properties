@@ -1,3 +1,6 @@
 literature_web/dist/
 __pycache__/
 .DS_Store
+
+# SMB pending-delete stubs (file open elsewhere while replaced)
+.smbdelete*
