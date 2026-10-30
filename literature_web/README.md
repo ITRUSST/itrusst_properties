@@ -58,12 +58,13 @@ Build the same files locally with `python3 scripts/build_release.py` (writes `di
 
 Each row has a "comment" link that opens an inline thread ([giscus](https://giscus.app), stored in GitHub Discussions, one discussion per value ID). Formal corrections still go through "suggest fix" (pre-filled issue).
 
-1. Make the repository public (giscus cannot read private repositories).
-2. Settings → General → Features → enable **Discussions**; create a category **Value comments** (type: Announcement, so only giscus creates threads).
-3. Install the giscus app: https://github.com/apps/giscus (this repository only).
-4. On https://giscus.app enter the repository and category, copy `data-repo-id` and `data-category-id` into `assets/config.js` (`giscus.repoId`, `giscus.categoryId`).
+Threads stay hidden until the IDs in `assets/config.js` are filled. To set them up (needs admin rights on the repository):
 
-Comment counts shown next to each row are refreshed by the *Deploy site* workflow whenever a thread changes. Threads stay hidden while the IDs are empty.
+1. Settings → General → Features → enable **Discussions**; create a category **Value comments** (type: Announcement, so only giscus creates threads).
+2. Install the giscus app: https://github.com/apps/giscus (this repository only).
+3. On https://giscus.app enter the repository and category, copy `data-repo-id` and `data-category-id` into `assets/config.js` (`giscus.repoId`, `giscus.categoryId`).
+
+Comment counts shown next to each row are refreshed by the *Deploy site* workflow whenever a thread changes.
 
 ## Preview locally
 

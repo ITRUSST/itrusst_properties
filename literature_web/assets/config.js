@@ -6,8 +6,8 @@ window.SITE_CONFIG = {
   branch: "main",
   logo: "assets/img/itrusst.png",
   // Inline comment threads per value (giscus, stored in GitHub Discussions).
-  // Fill repoId / categoryId from https://giscus.app after making the repo public,
-  // enabling Discussions and installing the giscus app. Leave empty to hide threads.
+  // Fill repoId / categoryId from https://giscus.app after enabling Discussions
+  // and installing the giscus app. Leave empty to hide threads.
   giscus: {
     repo: "ITRUSST/itrusst_properties",
     repoId: "",
