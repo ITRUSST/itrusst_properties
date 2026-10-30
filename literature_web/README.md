@@ -77,7 +77,7 @@ Opening `index.html` directly from disk does not work: browsers block loading th
 
 If you find this resource useful, please cite:
 
-> Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Yengul, S., Verhagen, L., Butts Pauly, K., & Pichardo, S. (in preparation). *Impact of acoustic property uncertainty on transcranial ultrasound simulation*.
+> Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (in preparation). *Impact of acoustic property uncertainty on transcranial ultrasound simulation*.
 
 ## Provenance
 

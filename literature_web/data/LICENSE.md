@@ -6,7 +6,7 @@ Full legal code: https://creativecommons.org/licenses/by/4.0/legalcode
 
 When reusing the data, cite the original publications listed in `references.csv` and this compilation:
 
-> Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Yengul, S., Verhagen, L., Butts Pauly, K., & Pichardo, S. (in preparation). *Impact of acoustic property uncertainty on transcranial ultrasound simulation*.
+> Kosciessa, J. Q., Webb, T., Martin, E., Treeby, B., Butts Pauly, K., Verhagen, L., & Pichardo, S. (in preparation). *Impact of acoustic property uncertainty on transcranial ultrasound simulation*.
 
 and link the site, e.g.:
 
