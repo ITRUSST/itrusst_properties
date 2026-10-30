@@ -7,9 +7,9 @@ Database versions follow `MAJOR.MINOR.PATCH`:
 - **PATCH**: corrections to existing values, citations, tags or notes
 - **Pre-release label** (`X.Y.Z-alpha`, `-beta`): data still being checked; values and bounds may change before `X.Y.Z`
 
-Each release bumps `data/meta.json`, appends its bounds to `data/bounds.csv` (earlier versions stay in the file), adds an entry here and is tagged `vX.Y.Z` in git.
+Each release bumps `data/meta.json` and `version`/`date-released` in `CITATION.cff` (repository root), appends its bounds to `data/bounds.csv` (earlier versions stay in the file), adds an entry here and is tagged `vX.Y.Z` in git.
 
-## 0.1.0 — 2026-10-29
+## 0.1.0 — 2026-10-30
 
 First release, corresponding to Supplementary Table S1 and Table 1 of Kosciessa et al. (in preparation). Earlier drafts (0.1.0-alpha, 0.2.0) were never in production and are superseded by this version.
 

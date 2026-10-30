@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "date": "2026-10-29",
+  "date": "2026-10-30",
   "title": "TUS Tissue Properties",
-  "description": "Literature values and LOW/reference/HIGH bounds synced with Supplementary Table S1 and Table 1 (draft 29.10.26), checked against the source papers. Absorption is given as absorption coefficient only."
+  "description": "Literature values and LOW/reference/HIGH bounds from Supplementary Table S1 and Table 1 of Kosciessa et al. (in preparation), checked against the source papers. Absorption is given as absorption coefficient only."
 }
